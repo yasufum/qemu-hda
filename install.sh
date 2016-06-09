@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # get spp for qemu
-https://github.com/garogers01/soft-patch-panel.git
+git clone https://github.com/garogers01/soft-patch-panel.git
 
 # get vm img
 wget https://people.debian.org/~aurel32/qemu/amd64/debian_wheezy_amd64_standard.qcow2
