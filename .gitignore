@@ -1,2 +1,5 @@
-images/*
-iso/*
+images/*.img
+images/*.qcow2
+iso/*.iso
+iso/*.img
+iso/*.qcow2
