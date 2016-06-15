@@ -23,6 +23,8 @@ There are four params in the script.
   - FORMAT: format type of image file. qcow2 is better if you use KVM.
   - HDASIZE: size of image file, 10G is adequate for ubuntu server.
 
+Run the script as following.
+
 ```
 $ bash create_install.sh
 ```
@@ -36,6 +38,11 @@ If you choose restart inside the window without close, QEMU attempts installatio
 
 #### (3) Run VM
 
+[NOTE] Before run VM using this tool,
+you have to setup specialized qemu which is contained in
+previous version of SPP (https://github.com/garogers01/soft-patch-panel)
+for running SPP and DPDK.
+
 Copy image file into runscript/ which you created by running create_install.sh in previous section.
 
 There are two scripts for running VM, ring.sh and vhost.sh for your purpose (You might see other scripts, but there are no need).
@@ -43,6 +50,11 @@ SPP supports two types of resources for running VMs.
 Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/examples/multi_process/patch_panel/docs/setup_guide.md) of SPP for details.
 
 Then edit and run the script.
+There are several params in the script.
+  - QEMU: location of specialized QEMU's exec file.
+  - HDA: image file you created.
+
+Run the script as following.
 
 ```
 $ bash ring.sh
