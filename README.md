@@ -46,8 +46,8 @@ previous version of SPP (https://github.com/garogers01/soft-patch-panel).
 
 Copy image file into runscript/ which you created by running create_install.sh in previous section.
 
-There are two scripts for running VM, ring.sh and vhost.sh for your purpose (You might see other scripts, but there are no need).
-SPP supports two types of resources for running VMs.
+There are two scripts for running VM, ring.sh and vhost.sh, for your purpose (You might see other scripts, but there are no need).
+SPP supports two types of resources to communicate with VMs.
 Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/examples/multi_process/patch_panel/docs/setup_guide.md) of SPP for details.
 
 Then edit and run the script.
