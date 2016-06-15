@@ -14,7 +14,7 @@ Download iso file form Ubuntu's web page.
 
 #### (2) Create VM
 
-Put iso file you downloaded put it into iso/ to be refered from script.
+Put iso file you downloaded into iso/ to be refered from script.
 
 Then, move to iso/ and edit, run create_install.sh script.
 There are four params in the script.
@@ -39,9 +39,10 @@ If you choose restart inside the window without close, QEMU attempts installatio
 #### (3) Run VM
 
 [NOTE] Before run VM using this tool,
-you have to setup specialized qemu which is contained in
-previous version of SPP (https://github.com/garogers01/soft-patch-panel)
-for running SPP and DPDK.
+you have to setup specialized qemu
+for running SPP and DPDK
+which is contained in
+previous version of SPP (https://github.com/garogers01/soft-patch-panel).
 
 Copy image file into runscript/ which you created by running create_install.sh in previous section.
 
