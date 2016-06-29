@@ -24,6 +24,8 @@ sudo ${QEMU} \
   -netdev tap,id=net1,ifname=net1,script=../ifscripts/qemu-ifup.sh \
   -device e1000,netdev=net2,mac=DE:AD:BE:EF:00:02 \
   -netdev tap,id=net2,ifname=net2,script=../ifscripts/qemu-ifup.sh \
+  -device e1000,netdev=net3,mac=DE:AD:BE:EF:00:03 \
   ${device_opt} \
+  -netdev tap,id=net3,ifname=net3,script=../ifscripts/qemu-ifup.sh \
   -monitor telnet::4444,server,nowait \
   -nographic
