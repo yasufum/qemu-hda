@@ -4,10 +4,12 @@ QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
 HDA=ubuntu-16.04-server-amd64.qcow2
 MEMSIZE=2048
 CORES=4
+QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
 
 SPP_DIR=$HOME/dpdk-home/spp-runner
 
-device_opt=$( cat ${SPP_DIR}/qemu_cmd_line.txt )
+device_opt=$( cat ${QEMU_IVSHMEM} )
+echo $device_opt
 
 sudo ${QEMU} \
   -cpu host \
