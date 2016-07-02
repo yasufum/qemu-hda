@@ -1,8 +1,8 @@
 #!/bin/bash
 
-QEMU=../soft-patch-panel/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
+QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
 HDA=images/debian_wheezy_amd64_standard.qcow2
-MEMSIZE=4096
+MEMSIZE=2048
 CORES=4
 
 sudo ${QEMU} \
