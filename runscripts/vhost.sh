@@ -1,7 +1,7 @@
 #!/bin/bash
 
 QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
-HDA=images/debian_wheezy_amd64_standard.qcow2
+HDA=ubuntu-16.04-server-amd64-vhost.qcow2
 MEMSIZE=2048
 CORES=4
 
@@ -14,11 +14,11 @@ sudo ${QEMU} \
   -hda ${HDA} \
   -m ${MEMSIZE} \
   -smp cores=${CORES},threads=1,sockets=1 \
-  -device e1000,netdev=net3,mac=DE:AD:BE:EF:00:03 \
-  -netdev tap,id=net3,ifname=net3,script=./ifscripts/qemu-ifup.sh \
+  -device e1000,netdev=net0,mac=DE:AD:BE:EF:00:01 \
+  -netdev tap,id=net0,ifname=net0,script=../ifscripts/qemu-ifup.sh \
   -chardev socket,id=chr0,path=/tmp/sock0 \
-  -netdev vhost-user,id=net4,chardev=chr0,vhostforce \
-  -device virtio-net-pci,netdev=net4 \
-  -nographic \
+  -netdev vhost-user,id=net1,chardev=chr0,vhostforce \
+  -device virtio-net-pci,netdev=net1 \
   -monitor telnet::4444,server,nowait \
-  -vnc :2
+  -nographic
+#  -netdev tap,id=net0,ifname=net0,script=../ifscripts/qemu-ifup.sh \
