@@ -6,8 +6,6 @@ MEMSIZE=2048
 CORES=4
 QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
 
-SPP_DIR=$HOME/dpdk-home/spp-runner
-
 device_opt=$( cat ${QEMU_IVSHMEM} )
 echo $device_opt
 

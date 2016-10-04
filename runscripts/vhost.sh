@@ -16,7 +16,7 @@ sudo ${QEMU} \
   -smp cores=${CORES},threads=1,sockets=1 \
   -device e1000,netdev=net0,mac=DE:AD:BE:EF:00:01 \
   -netdev tap,id=net0,ifname=net0,script=../ifscripts/qemu-ifup.sh \
-  -chardev socket,id=chr0,path=/tmp/sock0 \
+  -chardev socket,id=chr0,path=/tmp/sock5 \
   -netdev vhost-user,id=net1,chardev=chr0,vhostforce \
   -device virtio-net-pci,netdev=net1 \
   -monitor telnet::4444,server,nowait \
