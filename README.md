@@ -71,18 +71,18 @@ Compiled executable `qemu-system-x86_64` is placed in `[WORK_DIR]/qemu-2.3.0/x86
 Now you can run VM of the image you created by using QEMU command with options.
 But, you had better to use run scripts as following than input command and options by hand.
 
-Copy image file into runscript/ which you created by running create_install.sh in previous section.
+First, copy image file into runscript/ which you created by running create_install.sh in section (2).
 
-There are two scripts for running VM, ring.sh and vhost.sh, for your purpose (You might see other scripts, but there are no need).
+There are two scripts for running VM, ring.sh and vhost.sh, for your purpose (You might see other scripts in runscript/, but there are no needed).
 SPP supports two types of resources to communicate with VMs.
-Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/examples/multi_process/patch_panel/docs/setup_guide.md) of SPP for details.
+Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/docs/setup_guide.md) of SPP for details.
 
-Then edit and run the script.
-There are several params in the script.
+Edit the script for your environment.
+There are several params in the scripts.
   - QEMU: location of specialized QEMU's exec file.
   - HDA: image file you created.
 
-Run the script as following.
+Finally, run the script as following.
 
 ```
 $ bash ring.sh
