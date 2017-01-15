@@ -1,7 +1,7 @@
 #!/bin/bash
 
 QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
-HDA=ubuntu-16.04-server-amd64.qcow2
+HDA=ubuntu-16.04-server-amd64-ring.qcow2
 MEMSIZE=2048
 CORES=4
 QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
