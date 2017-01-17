@@ -5,3 +5,5 @@ iso/*.img
 iso/*.qcow2
 runscripts/*.img
 runscripts/*.qcow2
+runscripts/img/*.img
+runscripts/img/*.qcow2
