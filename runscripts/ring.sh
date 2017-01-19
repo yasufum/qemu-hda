@@ -1,11 +1,13 @@
 #!/bin/bash
 
-QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
-HDA=ubuntu-16.04-server-amd64-ring.qcow2
-MEMSIZE=2048
 CORES=4
+MEMSIZE=2048
+HDA=ubuntu-16.04-server-amd64.qcow2
+QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
 
-NOF_IF=1  # Number of NICs (Don't change withou you've any reason)
+# Don't change withou you've any reason
+RING_HDA=or-${HDA}
+NOF_IF=1  # Number of NICs 
 QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
 VM_ID=$1
 
@@ -23,11 +25,17 @@ WORKDIR=$(cd $(dirname $0); pwd)
 
 # Prepare image for the VM
 mkdir -p ${WORKDIR}/img
-HDA_INST=${WORKDIR}/img/ring${VM_ID}-${HDA}
-if [ ! -e ${HDA_INST} ]; then 
+HDA_INST=${WORKDIR}/img/r${VM_ID}-${RING_HDA}
+if [ ! -e ${RING_HDA} ]; then
+  echo "[ring.sh] You don't have any image for runninng ring."
+  echo "[ring.sh] Please install SPP and setup for ring."
+  echo "[ring.sh] First, you need to install python inside VM for ansible."
+  cp ${WORKDIR}/${HDA} ${RING_HDA}
+  HDA_INST=${RING_HDA}
+elif [ ! -e ${HDA_INST} ]; then 
   echo "[ring.sh] Preparing image:"
   echo "          "${HDA_INST}"..."
-  cp ${WORKDIR}/${HDA} ${HDA_INST}
+  cp ${WORKDIR}/${RING_HDA} ${HDA_INST}
 fi
 
 # Maximum number of NIC

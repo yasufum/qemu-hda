@@ -9,7 +9,7 @@ MEMSIZE=4096
 
 # params for create image
 ISO=ubuntu-16.04-server-amd64.iso
-HDASIZE=6G
+HDASIZE=8G
 FORMAT=qcow2
 
 # Create image

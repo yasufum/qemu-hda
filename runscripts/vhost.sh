@@ -1,12 +1,13 @@
 #!/bin/bash
 
-QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
-HDA=ubuntu-16.04-server-amd64-vhost.qcow2
-MEMSIZE=2048
 CORES=4
+MEMSIZE=2048
+HDA=ubuntu-16.04-server-amd64.qcow2
+QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
 
+# Don't change withou you've any reason
+VHOST_HDA=ov-${HDA}
 NOF_IF=1  # Number of NICs (Don't change withou you've any reason)
-QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
 VM_ID=$1
 
 # Check if VM_ID is invalid
@@ -23,8 +24,14 @@ WORKDIR=$(cd $(dirname $0); pwd)
 
 # Prepare image for the VM
 mkdir -p ${WORKDIR}/img
-HDA_INST=${WORKDIR}/img/vhost${VM_ID}-${HDA}
-if [ ! -e ${HDA_INST} ]; then 
+HDA_INST=${WORKDIR}/img/v${VM_ID}-${HDA}
+if [ ! -e ${VHOST_HDA} ]; then
+  echo "[vhost.sh] You don't have any image for runninng vhost."
+  echo "[vhost.sh] Please install SPP and setup for vhost."
+  echo "[vhost.sh] First, you need to install python inside VM for ansible."
+  cp ${WORKDIR}/${HDA} ${VHOST_HDA}
+  HDA_INST=${VHOST_HDA}
+elif [ ! -e ${HDA_INST} ]; then 
   echo "[vhost.sh] Preparing image:"
   echo "           "${HDA_INST}
   cp ${WORKDIR}/${HDA} ${HDA_INST}
