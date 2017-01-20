@@ -77,5 +77,5 @@ sudo ${QEMU} \
   -smp cores=${CORES},threads=1,sockets=1 \
   ${NIC_OPT} \
   ${device_opt} \
-  -nographic \
   -monitor telnet::${TELNET_PORT},server,nowait
+  #-nographic \
