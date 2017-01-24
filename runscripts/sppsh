@@ -3,37 +3,74 @@
 
 import sys
 import yaml
+import re
+import argparse
 import subprocess
 
 dns_file = "/var/lib/libvirt/dnsmasq/virbr0.status"
 
-def show_help():
-    print("Login VM listed in %s" % dns_file)
-    print("usage: sppsh HOST")
+parser = argparse.ArgumentParser(description="Login VM listed in %s" % dns_file)
+parser.add_argument(
+        "hostname",
+        nargs="?",
+        type=str,
+        help="Login host")
+parser.add_argument(
+        "-l", "--list", 
+        action="store_true",
+        help="Show entries")
+parser.add_argument(
+        "-u", "--update", 
+        type=str,
+        help="Update hostname by id or ipaddr")
+args = parser.parse_args()
+
+print args
 
 def main():
     f = open(dns_file, "r")
     y = yaml.load(f)
     f.close()
 
-    args = sys.argv
-    if len(args) == 1: # show help
-        show_help()
+    hn = args.hostname
+    if args.list == True: # show entries
+        i = 0
+        for ent in y:
+            print("id:%s, host:%s, ipaddr:%s" % (i, ent["hostname"], ent["ip-address"]))
+            i += 1
         exit()
-    elif len(args) > 1:
-        if args[1] == "-l": # show entries
-            for ent in y:
-                print("host: %s, ipaddr: %s" % (ent["hostname"], ent["ip-address"]))
-            exit()
-        else:  # assign hostname
-            hn = args[1]
-    else:
-        print("Please add option")
-        exit()
-    
+    elif args.update != None:
+        if re.match(r'^\d+\.\d+\.\d+\.\d+$', args.update):
+            h = args.update
+        elif re.match(r'^\d+$', args.update):
+            idx = int(args.update)
+            if idx < len(y):
+                h = y[idx]["ip-address"]
+        else:
+            print("Invalid ipaddr or id!")
+            raise
+
+        # Update host name
+        subprocess.call([
+            "ssh",
+            "-t",
+            str(h),
+            "sudo",
+            "hostnamectl",
+            "set-hostname",
+            str(hn)])
+        subprocess.call([
+            "ssh",
+            "-t",
+            str(h),
+            "sudo",
+            "reboot"])
+
     
     for ent in y:
         if (ent["hostname"] == hn):
             subprocess.call(["ssh", ent["ip-address"]])
 
-main()
+
+if __name__ == '__main__':
+    main()

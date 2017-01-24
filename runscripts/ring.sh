@@ -11,14 +11,7 @@ NOF_IF=1  # Number of NICs
 QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
 VM_ID=$1
 
-# Check if VM_ID is invalid
-if [ ! ${VM_ID} ]; then
-  VM_ID=1
-elif [ ${VM_ID} -gt 9 ]; then
-  VM_ID=9
-fi
-
-VM_HOSTNAME=spp-r${VM_ID}
+VM_HOSTNAME=sppr${VM_ID}
 
 # $WORKDIR is set to the directory of this script.
 WORKDIR=$(cd $(dirname $0); pwd)
@@ -50,7 +43,7 @@ fi
 # Setup network interfaces
 NIC_OPT=""
 for ((i=0; i<${NOF_IF}; i++)); do
-  TMP_MAC=00:AD:BE:EF:0${VM_ID}:0${i}
+  TMP_MAC=00:AD:BE:${VM_ID}:EF:0${i}
   TMP_NETDEV=net_r${VM_ID}_${i}
   NIC_OPT=${NIC_OPT}"-device e1000,netdev=${TMP_NETDEV},mac=${TMP_MAC} "
   NIC_OPT=${NIC_OPT}"-netdev tap,id=${TMP_NETDEV},ifname=${TMP_NETDEV},script=../ifscripts/qemu-ifup.sh "
@@ -60,7 +53,7 @@ done
 device_opt=$( cat ${QEMU_IVSHMEM} )
 
 # For QEMU monitor
-TELNET_PORT=4440${VM_ID}
+TELNET_PORT=444${VM_ID}
 
 #
 echo "[ring.sh] Boot "${VM_HOSTNAME}" with image:"

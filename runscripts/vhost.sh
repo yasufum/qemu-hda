@@ -10,14 +10,7 @@ VHOST_HDA=ov-${HDA}
 NOF_IF=1  # Number of NICs (Don't change withou you've any reason)
 VM_ID=$1
 
-# Check if VM_ID is invalid
-if [ ! ${VM_ID} ]; then
-  VM_ID=1
-elif [ ${VM_ID} -gt 9 ]; then
-  VM_ID=9
-fi
-
-VM_HOSTNAME=spp-v${VM_ID}
+VM_HOSTNAME=sppv${VM_ID}
 
 # $WORKDIR is set to the directory of this script.
 WORKDIR=$(cd $(dirname $0); pwd)
@@ -52,7 +45,7 @@ fi
 # Setup network interfaces
 NIC_OPT=""
 for ((i=0; i<${NOF_IF}; i++)); do
-  TMP_MAC=00:AD:BE:EF:A${VM_ID}:0${i}
+  TMP_MAC=00:AD:BE:EF:${VM_ID}:0${i}
   TMP_NETDEV=net_v${VM_ID}_${i}
   NIC_OPT=${NIC_OPT}"-device e1000,netdev=${TMP_NETDEV},mac=${TMP_MAC} "
   NIC_OPT=${NIC_OPT}"-netdev tap,id=${TMP_NETDEV},ifname=${TMP_NETDEV},script=../ifscripts/qemu-ifup.sh "
@@ -62,10 +55,10 @@ done
 NIC_VU=net_vu${VM_ID}
 
 # Assign socket id which is used as SPP secondary id
-SOCK_ID=1${VM_ID}
+SOCK_ID=${VM_ID}
 
 # For QEMU monitor
-TELNET_PORT=4442${VM_ID}
+TELNET_PORT=444${VM_ID}
 
 
 #
