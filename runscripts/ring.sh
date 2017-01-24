@@ -19,7 +19,10 @@ WORKDIR=$(cd $(dirname $0); pwd)
 # Prepare image for the VM
 mkdir -p ${WORKDIR}/img
 HDA_INST=img/r${VM_ID}-${RING_HDA}
-if [ ! -e ${RING_HDA} ]; then
+if [ ${VM_ID} -eq 0 ] && [ -e ${RING_HDA} ]; then
+  echo "[ring.sh] Running using original HDA"
+  HDA_INST=${RING_HDA}
+elif [ ! -e ${RING_HDA} ]; then
   echo "[ring.sh] You don't have any image for runninng ring."
   echo "[ring.sh] Please install SPP and setup for ring."
   echo "[ring.sh] First, you need to install python inside VM for ansible."
@@ -43,7 +46,11 @@ fi
 # Setup network interfaces
 NIC_OPT=""
 for ((i=0; i<${NOF_IF}; i++)); do
-  TMP_MAC=00:AD:BE:${VM_ID}:EF:0${i}
+  if [ ${VM_ID} -lt 10 ]; then
+    TMP_MAC=00:AD:BE:0${VM_ID}:EF:0${i}
+  else
+    TMP_MAC=00:AD:BE:${VM_ID}:EF:0${i}
+  fi
   TMP_NETDEV=net_r${VM_ID}_${i}
   NIC_OPT=${NIC_OPT}"-device e1000,netdev=${TMP_NETDEV},mac=${TMP_MAC} "
   NIC_OPT=${NIC_OPT}"-netdev tap,id=${TMP_NETDEV},ifname=${TMP_NETDEV},script=../ifscripts/qemu-ifup.sh "
@@ -53,7 +60,7 @@ done
 device_opt=$( cat ${QEMU_IVSHMEM} )
 
 # For QEMU monitor
-TELNET_PORT=444${VM_ID}
+TELNET_PORT=447${VM_ID}
 
 #
 echo "[ring.sh] Boot "${VM_HOSTNAME}" with image:"

@@ -25,7 +25,6 @@ parser.add_argument(
         help="Update hostname by id or ipaddr")
 args = parser.parse_args()
 
-print args
 
 def main():
     f = open(dns_file, "r")

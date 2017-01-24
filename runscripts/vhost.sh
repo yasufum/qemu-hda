@@ -19,7 +19,10 @@ WORKDIR=$(cd $(dirname $0); pwd)
 mkdir -p ${WORKDIR}/img
 HDA_INST=img/v${VM_ID}-${VHOST_HDA}
 # If you don't have vhost's image in current dir, create it to install vhost.
-if [ ! -e ${VHOST_HDA} ]; then
+if [ ${VM_ID} -eq 0 ] && [ -e ${VHOST_HDA} ]; then
+  echo "[vhost.sh] Running using original HDA"
+  HDA_INST=${VHOST_HDA}
+elif [ ! -e ${VHOST_HDA} ]; then
   echo "[vhost.sh] You don't have any image for runninng vhost."
   echo "[vhost.sh] Please install SPP and setup for vhost."
   echo "[vhost.sh] First, you need to install python inside VM for ansible."
@@ -45,7 +48,11 @@ fi
 # Setup network interfaces
 NIC_OPT=""
 for ((i=0; i<${NOF_IF}; i++)); do
-  TMP_MAC=00:AD:BE:EF:${VM_ID}:0${i}
+  if [ ${VM_ID} -lt 10 ]; then
+    TMP_MAC=00:AD:BE:EF:0${VM_ID}:0${i}
+  else
+    TMP_MAC=00:AD:BE:EF:${VM_ID}:0${i}
+  fi
   TMP_NETDEV=net_v${VM_ID}_${i}
   NIC_OPT=${NIC_OPT}"-device e1000,netdev=${TMP_NETDEV},mac=${TMP_MAC} "
   NIC_OPT=${NIC_OPT}"-netdev tap,id=${TMP_NETDEV},ifname=${TMP_NETDEV},script=../ifscripts/qemu-ifup.sh "
@@ -58,7 +65,7 @@ NIC_VU=net_vu${VM_ID}
 SOCK_ID=${VM_ID}
 
 # For QEMU monitor
-TELNET_PORT=444${VM_ID}
+TELNET_PORT=448${VM_ID}
 
 
 #
