@@ -60,7 +60,11 @@ done
 device_opt=$( cat ${QEMU_IVSHMEM} )
 
 # For QEMU monitor
-TELNET_PORT=447${VM_ID}
+if [ ${VM_ID} -lt 10 ]; then
+  TELNET_PORT=4470${VM_ID}
+else
+  TELNET_PORT=447${VM_ID}
+fi
 
 #
 echo "[ring.sh] Boot "${VM_HOSTNAME}" with image:"

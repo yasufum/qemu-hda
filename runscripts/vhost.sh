@@ -65,7 +65,11 @@ NIC_VU=net_vu${VM_ID}
 SOCK_ID=${VM_ID}
 
 # For QEMU monitor
-TELNET_PORT=448${VM_ID}
+if [ ${VM_ID} -lt 10 ]; then
+  TELNET_PORT=4480${VM_ID}
+else
+  TELNET_PORT=448${VM_ID}
+fi
 
 
 #
