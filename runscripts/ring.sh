@@ -6,10 +6,10 @@ HDA=ubuntu-16.04-server-amd64.qcow2
 QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
 
 # Don't change withou you've any reason
-RING_HDA=or-${HDA}
 NOF_IF=1  # Number of NICs 
 QEMU_IVSHMEM=/tmp/ivshmem_qemu_cmdline_pp_ivshmem
 VM_ID=$1
+RING_HDA=r${VM_ID}-${HDA}
 
 VM_HOSTNAME=sppr${VM_ID}
 

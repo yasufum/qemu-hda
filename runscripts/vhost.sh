@@ -6,9 +6,9 @@ HDA=ubuntu-16.04-server-amd64.qcow2
 QEMU=$HOME/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64
 
 # Don't change withou you've any reason
-VHOST_HDA=ov-${HDA}
 NOF_IF=1  # Number of NICs (Don't change withou you've any reason)
 VM_ID=$1
+VHOST_HDA=v${VM_ID}-${HDA}
 
 VM_HOSTNAME=sppv${VM_ID}
 
