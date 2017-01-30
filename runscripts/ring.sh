@@ -18,19 +18,19 @@ WORKDIR=$(cd $(dirname $0); pwd)
 
 # Prepare image for the VM
 mkdir -p ${WORKDIR}/img
-HDA_INST=img/r${VM_ID}-${RING_HDA}
+HDA_INST=${WORKDIR}/img/r${VM_ID}-${RING_HDA}
 if [ ${VM_ID} -eq 0 ] && [ -e ${RING_HDA} ]; then
   echo "[ring.sh] Running using original HDA"
   HDA_INST=${RING_HDA}
-elif [ ! -e ${RING_HDA} ]; then
+elif [ ! -e ${WORKDIR}/${RING_HDA} ]; then
   echo "[ring.sh] You don't have any image for runninng ring."
   echo "[ring.sh] Please install SPP and setup for ring."
   echo "[ring.sh] First, you need to install python inside VM for ansible."
   cp ${WORKDIR}/${HDA} ${WORKDIR}/${RING_HDA}
-  HDA_INST=${RING_HDA}
+  HDA_INST=${WORKDIR}/${RING_HDA}
 elif [ ! -e ${HDA_INST} ]; then 
   echo "[ring.sh] Preparing image:"
-  echo "          "${HDA_INST}"..."
+  echo "          "${HDA_INST}
   cp ${WORKDIR}/${RING_HDA} ${WORKDIR}/${HDA_INST}
   echo "[ring.sh] Change hostname to "${VM_HOSTNAME}" for convenience."
   echo "          Run hostnamectl command inside VM as following"

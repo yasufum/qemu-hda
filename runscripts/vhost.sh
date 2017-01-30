@@ -17,17 +17,17 @@ WORKDIR=$(cd $(dirname $0); pwd)
 
 # Prepare image for the VM
 mkdir -p ${WORKDIR}/img
-HDA_INST=img/v${VM_ID}-${VHOST_HDA}
+HDA_INST=${WORKDIR}/img/v${VM_ID}-${VHOST_HDA}
 # If you don't have vhost's image in current dir, create it to install vhost.
 if [ ${VM_ID} -eq 0 ] && [ -e ${VHOST_HDA} ]; then
   echo "[vhost.sh] Running using original HDA"
   HDA_INST=${VHOST_HDA}
-elif [ ! -e ${VHOST_HDA} ]; then
+elif [ ! -e ${WORKDIR}/${VHOST_HDA} ]; then
   echo "[vhost.sh] You don't have any image for runninng vhost."
   echo "[vhost.sh] Please install SPP and setup for vhost."
   echo "[vhost.sh] First, you need to install python inside VM for ansible."
   cp ${WORKDIR}/${HDA} ${WORKDIR}/${VHOST_HDA}
-  HDA_INST=${VHOST_HDA}
+  HDA_INST=${WORKDIR}/${VHOST_HDA}
 # If you have image in current dir, check img/ and create new image if
 # instance doesn't exist.
 elif [ ! -e ${HDA_INST} ]; then 
