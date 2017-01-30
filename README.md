@@ -9,7 +9,7 @@ Setup tools for creating and running VMs for SPP.
 
 This tools support Ubuntu (I've tested only 16.04, but 14.04 possibly run).
 Download ISO file form Ubuntu's web page.
-URLs are listed in [iso/iso-list.txt](iso/iso-list.txt).
+URLs are listed in [iso/iso-list.txt](iso/README.md).
 
 
 #### (2) Create VM image
