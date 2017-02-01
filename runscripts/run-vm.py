@@ -24,8 +24,8 @@ ifup_sh = "%s/../ifscripts/qemu-ifup.sh" % work_dir
 
 parser = argparse.ArgumentParser(description="Run SPP and VMs")
 parser.add_argument(
-        "-i", "--vid",
-        type=int, default=99,
+        "-i", "--vids",
+        type=str,
         help="VM ID")
 parser.add_argument(
         "-t", "--type",
@@ -60,73 +60,119 @@ def print_qemu_cmd(args):
 # Generate qemu options and return as a list for subprocess
 def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
 
-    if stype == "ring":
-        prefix = "r"
-        macaddr = "00:AD:BE:%02d:EF:%02d" # gen unique addr with vm_id and index num.
-        telnet_port = "447%02d"  # gen unique port with vm_id
-    else:
-        prefix = "v"
-        macaddr = "00:AD:BE:EF:%02d:%02d"
-        telnet_port = "448%02d"
+    if stype == "none":
+        macaddr = "00:AD:00:BE:EF:%02d" # gen unique addr with index num.
+        telnet_port = "44600"
 
-    # NIC options
-    nic_opts = []
-    for i in range(0, nof_nwif):
-        tmp_mac = macaddr % (vm_id, i)
-        tmp_netdev = "net_%s%s_%s" % (prefix, vm_id, i)
-        nic_opts = nic_opts + [
-                "-device",
-                "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
+        # NIC options
+        nic_opts = []
+        for i in range(0, nof_nwif):
+            tmp_mac = macaddr % i
+            tmp_netdev = "net_0_%s" % i
+            nic_opts = nic_opts + [
+                    "-device",
+                    "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
+                    ]
+            nic_opts = nic_opts + [
+                    "-netdev",
+                    "tap,id=%s,ifname=%s,script=%s" % (tmp_netdev, tmp_netdev, ifup_sh)
+                    ]
+
+        # monitor options
+        monitor_opts = [
+                "-monitor",
+                "telnet::%s,server,nowait" % telnet_port]
+
+        # object(hugepage) options
+        hugepage_opt = [
+                "memory-backend-file",
+                "id=mem",
+                "size=%sM" % memsize,
+                "mem-path=/dev/hugepages",
+                "share=on"
                 ]
-        nic_opts = nic_opts + [
-                "-netdev",
-                "tap,id=%s,ifname=%s,script=%s" % (tmp_netdev, tmp_netdev, ifup_sh)
-                ]
+        hugepage_opt = ",".join(hugepage_opt)
+        hugepage_opts = ["-object", hugepage_opt]
 
-    # monitor options
-    telnet_p = telnet_port % vm_id
-    monitor_opts = [
-            "-monitor",
-            "telnet::%s,server,nowait" % telnet_p]
+        qemu_opts = [
+                "-cpu", "host",
+                "-enable-kvm",
+                "-numa", "node,memdev=mem",
+                "-mem-prealloc",
+                "-hda", img_inst,
+                "-m", str(memsize),
+                "-smp", "cores=%s,threads=1,sockets=1" % cores,
+                "-nographic"
+                ] + hugepage_opts + nic_opts + monitor_opts
 
-    # object(hugepage) options
-    hugepage_opt = [
-            "memory-backend-file",
-            "id=mem",
-            "size=%sM" % memsize,
-            "mem-path=/dev/hugepages",
-            "share=on"
-            ]
-    hugepage_opt = ",".join(hugepage_opt)
-    hugepage_opts = ["-object", hugepage_opt]
-
-    # spp's device options (ring or vhost)
-    if stype == "ring":
-        # ivshmem options
-        f = open(QEMU_IVSHMEM, "r")
-        tmp = f.read()
-        tmp = tmp.strip()
-        spp_dev_opts = tmp.split(" ")
-        f.close()
     else:
-        sock_id = vm_id  # [TODO] restrict maximum num of vm_id(heuristically, 21 is not affect)
-        nic_vu = "net_vu%s" % vm_id  # NIC for vhost-user
-        spp_dev_opts = [
-               "-chardev", "socket,id=chr0,path=/tmp/sock%s" % sock_id,
-               "-netdev", "vhost-user,id=%s,chardev=chr0,vhostforce" % nic_vu,
-               "-device", "virtio-net-pci,netdev=%s" % nic_vu
-               ]
+        if stype == "ring":
+            prefix = "r"
+            macaddr = "00:AD:BE:%02d:EF:%02d" # gen unique addr with vm_id and index num.
+            telnet_port = "447%02d"  # gen unique port with vm_id
+        else:
+            prefix = "v"
+            macaddr = "00:AD:BE:EF:%02d:%02d"
+            telnet_port = "448%02d"
 
-    qemu_opts = [
-            "-cpu", "host",
-            "-enable-kvm",
-            "-numa", "node,memdev=mem",
-            "-mem-prealloc",
-            "-hda", img_inst,
-            "-m", str(memsize),
-            "-smp", "cores=%s,threads=1,sockets=1" % cores,
-            "-nographic"
-            ] + hugepage_opts + nic_opts + spp_dev_opts + monitor_opts
+        # NIC options
+        nic_opts = []
+        for i in range(0, nof_nwif):
+            tmp_mac = macaddr % (vm_id, i)
+            tmp_netdev = "net_%s%s_%s" % (prefix, vm_id, i)
+            nic_opts = nic_opts + [
+                    "-device",
+                    "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
+                    ]
+            nic_opts = nic_opts + [
+                    "-netdev",
+                    "tap,id=%s,ifname=%s,script=%s" % (tmp_netdev, tmp_netdev, ifup_sh)
+                    ]
+
+        # monitor options
+        telnet_p = telnet_port % vm_id
+        monitor_opts = [
+                "-monitor",
+                "telnet::%s,server,nowait" % telnet_p]
+
+        # object(hugepage) options
+        hugepage_opt = [
+                "memory-backend-file",
+                "id=mem",
+                "size=%sM" % memsize,
+                "mem-path=/dev/hugepages",
+                "share=on"
+                ]
+        hugepage_opt = ",".join(hugepage_opt)
+        hugepage_opts = ["-object", hugepage_opt]
+
+        # spp's device options (ring or vhost)
+        if stype == "ring":
+            # ivshmem options
+            f = open(QEMU_IVSHMEM, "r")
+            tmp = f.read()
+            tmp = tmp.strip()
+            spp_dev_opts = tmp.split(" ")
+            f.close()
+        else:
+            sock_id = vm_id  # [TODO] restrict maximum num of vm_id(heuristically, 21 is not affect)
+            nic_vu = "net_vu%s" % vm_id  # NIC for vhost-user
+            spp_dev_opts = [
+                   "-chardev", "socket,id=chr0,path=/tmp/sock%s" % sock_id,
+                   "-netdev", "vhost-user,id=%s,chardev=chr0,vhostforce" % nic_vu,
+                   "-device", "virtio-net-pci,netdev=%s" % nic_vu
+                   ]
+
+        qemu_opts = [
+                "-cpu", "host",
+                "-enable-kvm",
+                "-numa", "node,memdev=mem",
+                "-mem-prealloc",
+                "-hda", img_inst,
+                "-m", str(memsize),
+                "-smp", "cores=%s,threads=1,sockets=1" % cores,
+                "-nographic"
+                ] + hugepage_opts + nic_opts + spp_dev_opts + monitor_opts
 
     return ["sudo", QEMU] + qemu_opts
 
@@ -136,41 +182,45 @@ def main():
     memsize = MEMSIZE
     nof_nwif = NOF_NWIF
 
-    if args.type == "ring":
-        prefix = "r"
-    elif args.type == "vhost":
-        prefix = "v"
-    else:
-        print("invalid interface type!")
-        exit()
+    #[TODO] 複数vidを分割して、forで1つずつ起動させる
+    vid = int(args.vids)
 
     img_hda = "%s/%s" % (work_dir, HDA)
     subprocess.call(["mkdir", "-p", img_dir])
 
-    # Templates are created in working dir and instances are in img_dir.
-    # format of template name is adding prefix and "0" with HDA,
-    # like a r0-${HDA}
-    img_temp= "%s/%s0-%s" % (work_dir, prefix, HDA)
-    img_inst = "%s/%s%s-%s" % (img_dir, prefix, args.vid, HDA)
-
-    if args.vid == 99: # boot from hda if you need to update itself.
-        # Use original HDA
+    if args.type == "none":
         imgfile = img_hda
-    elif args.vid == 0:
-        # Create template
-        if (not os.path.exists(img_temp)):
-            shutil.copy(img_hda, img_temp)
-        imgfile = img_temp
-    elif (not os.path.exists(img_inst)):
-        # Create instance
-        shutil.copy(img_temp, img_inst)
-        imgfile = img_inst
+
     else:
-        imgfile = img_inst
+        if args.type == "ring":
+            prefix = "r"
+        elif args.type == "vhost":
+            prefix = "v"
+        else:
+            print("invalid interface type!")
+            exit()
+
+        # Templates are created in working dir and instances are in img_dir.
+        # format of template name is adding prefix and "0" with HDA,
+        # like a r0-${HDA}
+        img_temp= "%s/%s0-%s" % (work_dir, prefix, HDA)
+        img_inst = "%s/%s%s-%s" % (img_dir, prefix, vid, HDA)
+
+        if vid == 0:
+            # Create template
+            if (not os.path.exists(img_temp)):
+                shutil.copy(img_hda, img_temp)
+            imgfile = img_temp
+        elif (not os.path.exists(img_inst)):
+            # Create instance
+            shutil.copy(img_temp, img_inst)
+            imgfile = img_inst
+        else:
+            imgfile = img_inst
 
     qemu_cmd = gen_qemu_cmd(
             args.type,
-            args.vid,
+            vid,
             imgfile,
             cores,
             memsize,
