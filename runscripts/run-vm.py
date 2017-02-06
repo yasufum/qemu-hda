@@ -49,7 +49,7 @@ def print_qemu_cmd(args):
             ary = []
             for i in range(0, 2):
                 ary.append(_args.pop(0))
-            if re.match('^-', ary[0]):
+            if re.match(r'^-', ary[0]):
                 print("  %s %s" % (ary[0], ary[1]))
             else:
                 print("%s %s" % (ary[0], ary[1]))
@@ -155,7 +155,8 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
             spp_dev_opts = tmp.split(" ")
             f.close()
         else:
-            sock_id = vm_id  # [TODO] restrict maximum num of vm_id(heuristically, 21 is not affect)
+            # [TODO] restrict maximum num of vm_id defined in spp controller
+            sock_id = vm_id  
             nic_vu = "net_vu%s" % vm_id  # NIC for vhost-user
             spp_dev_opts = [
                    "-chardev", "socket,id=chr0,path=/tmp/sock%s" % sock_id,
@@ -182,51 +183,80 @@ def main():
     memsize = MEMSIZE
     nof_nwif = NOF_NWIF
 
-    #[TODO] 複数vidを分割して、forで1つずつ起動させる
-    vid = int(args.vids)
+    # Separate vids and append it to an array
+    # vids format is expedted to be like as "1,3-5,7"
+    vids_str = args.vids
+    #if not re.match(r'(\d+,\d+)', vids_str) or re.match(r'(\d+-\d+)', vids_str):
+    if re.match(r'.*[a-zA-Z\+\*]', vids_str):
+        print("Invalid argment: %s" % vids_str)
+        exit()
 
-    img_hda = "%s/%s" % (work_dir, HDA)
-    subprocess.call(["mkdir", "-p", img_dir])
-
-    if args.type == "none":
-        imgfile = img_hda
-
-    else:
-        if args.type == "ring":
-            prefix = "r"
-        elif args.type == "vhost":
-            prefix = "v"
+    vids = []
+    # First, separate with ",", then "-" and complete between the range of 'x-y'
+    for ss in vids_str.split(","):
+        if re.match(r'^\d+-\d+', ss):
+            rng = ss.split("-")
+            for i in range(int(rng[0]), int(rng[1])+1):
+                vids.append(i)
         else:
-            print("invalid interface type!")
-            exit()
+            vids.append(int(ss))
+    
+    # Remove overlapped elements
+    vids = list(set(vids))
 
-        # Templates are created in working dir and instances are in img_dir.
-        # format of template name is adding prefix and "0" with HDA,
-        # like a r0-${HDA}
-        img_temp= "%s/%s0-%s" % (work_dir, prefix, HDA)
-        img_inst = "%s/%s%s-%s" % (img_dir, prefix, vid, HDA)
 
-        if vid == 0:
-            # Create template
-            if (not os.path.exists(img_temp)):
-                shutil.copy(img_hda, img_temp)
-            imgfile = img_temp
-        elif (not os.path.exists(img_inst)):
-            # Create instance
-            shutil.copy(img_temp, img_inst)
-            imgfile = img_inst
+    if (args.type == "none") and (len(vids) > 1):
+        print("Error: You use only one VM with type 'none'")
+        exit()
+
+    qemu_cmds = []
+    for vid in vids:
+        img_hda = "%s/%s" % (work_dir, HDA)
+        subprocess.call(["mkdir", "-p", img_dir])
+
+        if args.type == "none":
+            imgfile = img_hda
+
         else:
-            imgfile = img_inst
+            if args.type == "ring":
+                prefix = "r"
+            elif args.type == "vhost":
+                prefix = "v"
+            else:
+                print("invalid interface type!")
+                exit()
 
-    qemu_cmd = gen_qemu_cmd(
-            args.type,
-            vid,
-            imgfile,
-            cores,
-            memsize,
-            nof_nwif)
-    print_qemu_cmd(qemu_cmd)
-    subprocess.call(qemu_cmd)
+            # Templates are created in working dir and instances are in img_dir.
+            # format of template name is adding prefix and "0" with HDA,
+            # like a r0-${HDA}
+            img_temp= "%s/%s0-%s" % (work_dir, prefix, HDA)
+            img_inst = "%s/%s%s-%s" % (img_dir, prefix, vid, HDA)
+
+            if vid == 0:
+                # Create template
+                if (not os.path.exists(img_temp)):
+                    shutil.copy(img_hda, img_temp)
+                imgfile = img_temp
+            elif (not os.path.exists(img_inst)):
+                # Create instance
+                shutil.copy(img_temp, img_inst)
+                imgfile = img_inst
+            else:
+                imgfile = img_inst
+
+        qemu_cmds.append(
+                gen_qemu_cmd(
+                    args.type,
+                    vid,
+                    imgfile,
+                    cores,
+                    memsize,
+                    nof_nwif)
+                )
+
+    for qc in qemu_cmds:
+        print_qemu_cmd(qc)
+        subprocess.call(qc, shell=True)
 
 
 if __name__ == '__main__':
