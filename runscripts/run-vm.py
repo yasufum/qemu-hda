@@ -254,9 +254,13 @@ def main():
                     nof_nwif)
                 )
 
+    # Do sudo before running qemu in background
+    subprocess.call(["sudo", "pwd"])
+
     for qc in qemu_cmds:
+        qc.append("&")
         print_qemu_cmd(qc)
-        subprocess.call(qc, shell=True)
+        subprocess.call(" ".join(qc), shell=True)
 
 
 if __name__ == '__main__':
