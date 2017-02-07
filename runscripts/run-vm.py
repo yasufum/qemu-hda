@@ -26,11 +26,11 @@ parser = argparse.ArgumentParser(description="Run SPP and VMs")
 parser.add_argument(
         "-i", "--vids",
         type=str,
-        help="VM ID")
+        help="VM IDs (exp. '1', '1,2,3' or '1-3')")
 parser.add_argument(
         "-t", "--type",
         type=str,
-        help="Interface type (ring or vhost)")
+        help="Interface type ('ring', 'vhost' and 'none')")
 parser.add_argument(
         "-c", "--cores",
         type=int, default=2,
@@ -183,10 +183,14 @@ def main():
     memsize = MEMSIZE
     nof_nwif = NOF_NWIF
 
+    if args.vids == None:
+        print("Error: At least one VM ID with '-i' option must be required!")
+        print("Run 'run-vm.py -h' for help.")
+        exit()
+
     # Separate vids and append it to an array
     # vids format is expedted to be like as "1,3-5,7"
     vids_str = args.vids
-    #if not re.match(r'(\d+,\d+)', vids_str) or re.match(r'(\d+-\d+)', vids_str):
     if re.match(r'.*[a-zA-Z\+\*]', vids_str):
         print("Invalid argment: %s" % vids_str)
         exit()
