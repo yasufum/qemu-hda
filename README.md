@@ -93,9 +93,11 @@ Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/docs/setup_guide
 You have to give a type with `-t` option.
 There three types.
 For `none` type, the script run from HDA and doesn't use SPP interface.
+
   - ring
   - vhost
   - none
+
 To refer help message, run the script with `-h` option.
 
 ```sh
