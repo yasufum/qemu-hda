@@ -71,30 +71,40 @@ Compiled executable `qemu-system-x86_64` is placed in `[WORK_DIR]/qemu-2.3.0/x86
 #### (4) Run VM
 
 Now you can run VM of the image you created by using QEMU command.
-But, you had better to use run scripts as following than input command and options by hand.
+However, you had better to use run scripts as following than input command and options by hand.
 
-First, copy image file into runscript/ which you created by running img_creator.sh in section (2).
-
-There are two scripts for running VM, ring.sh and vhost.sh, for your purpose (You might find other scripts in runscript/, but don't need to notice now).
-SPP supports two types of resources to communicate with VMs.
-Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/docs/setup_guide.md) of SPP for details.
-
-Edit the script for your environment.
-There are several params in the scripts.
+First, copy image file into runscript/ which you created by running `iso/img_creator.sh` in section (2).
+Then, you edit `runscript/run-vm.py` to identify your image from the script.
+You also edit the location of qemu executable.
+Each of them are defined as following params in the scripts.
   - QEMU: location of specialized QEMU's exec file.
   - HDA: image file you created.
 
-Finally, run the script with VM ID (1-9) to identify them.
-If you don't add it, default (1) is used.
+You are ready to run VM.
+But before run the script, you have to consider which type of SPP interfaces
+you use, or don't use.
+SPP supports two types of interface, `ring` and `vhost` to communicate with VMs.
+Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/docs/setup_guide.md) of SPP for details.
 
-For convenience, `vhost.sh` assign sock interface as `$VM_ID` + 2.
-If you give VM ID 3, `/tmp/sock12` is assigned. 
+You have to give a type with `-t` option.
+There three types.
+`none` doesn't use SPP interface.
+  - ring
+  - vhost
+  - none
+To refer help message, run the script with `-h` option.
 
 ```
-# ring interface
-$ bash ring.sh 1
+$ ./run-vm.py -h
+usage: run-vm.py [-h] [-i VIDS] [-t TYPE] [-c CORES] [-m MEM]
 
-# vhost interface
-$ bash vhost.sh 1
-# /tmp/sock11 is assigned for VM_ID=1.
+Run SPP and VMs
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i VIDS, --vids VIDS  VM IDs
+  -t TYPE, --type TYPE  Interface type ('ring','vhost' and 'none')
+  -c CORES, --cores CORES
+                        Number of cores
+  -m MEM, --mem MEM     Memory size
 ```
