@@ -213,6 +213,15 @@ def main():
         print("Error: You use only one VM with type 'none'")
         exit()
 
+    # show prompt if spp primary doesn't run 
+    if args.type == "ring":
+        if not os.path.exists(QEMU_IVSHMEM):
+            print("SPP primary process isn't ready for ivshmem.")
+            print("Run SPP primary first.")
+            input_str = raw_input("Continue to run? Y/n>\n")
+        if input_str == "n" or input_str == "no":
+            exit()
+
     qemu_cmds = []
     for vid in vids:
         img_hda = "%s/%s" % (work_dir, HDA)
@@ -231,8 +240,7 @@ def main():
                 exit()
 
             # Templates are created in working dir and instances are in img_dir.
-            # format of template name is adding prefix and "0" with HDA,
-            # like a r0-${HDA}
+            # format of template name is adding prefix and "0" with HDA, 'r0-${HDA}'
             img_temp= "%s/%s0-%s" % (work_dir, prefix, HDA)
             img_inst = "%s/%s%s-%s" % (img_dir, prefix, vid, HDA)
 
@@ -258,7 +266,8 @@ def main():
                     nof_nwif)
                 )
 
-    # Do sudo before running qemu in background
+    # To stop running qemu in background before input password,
+    # do sudo.
     subprocess.call(["sudo", "pwd"])
 
     for qc in qemu_cmds:
