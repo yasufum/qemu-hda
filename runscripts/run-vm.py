@@ -178,6 +178,16 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
     return ["sudo", QEMU] + qemu_opts
 
     
+def confirm_ivshmem():
+    while not os.path.exists(QEMU_IVSHMEM):
+        if not os.path.exists(QEMU_IVSHMEM):
+            print("SPP primary process isn't ready for ivshmem.")
+            print("Run SPP primary first.")
+            input_str = raw_input("Continue to run? Y/n>\n")
+        if input_str == "n" or input_str == "no":
+            exit()
+
+
 def main():
     cores = CORES
     memsize = MEMSIZE
@@ -215,12 +225,7 @@ def main():
 
     # show prompt if spp primary doesn't run 
     if args.type == "ring":
-        if not os.path.exists(QEMU_IVSHMEM):
-            print("SPP primary process isn't ready for ivshmem.")
-            print("Run SPP primary first.")
-            input_str = raw_input("Continue to run? Y/n>\n")
-        if input_str == "n" or input_str == "no":
-            exit()
+        confirm_ivshmem()
 
     qemu_cmds = []
     for vid in vids:
