@@ -39,6 +39,10 @@ parser.add_argument(
         "-m", "--mem",
         type=int, default=2048,
         help="Memory size")
+parser.add_argument(
+        "-vn", "--vhost-num",
+        type=int, default=1,
+        help="Number of vhost interfaces")
 args = parser.parse_args()
 
 
@@ -152,17 +156,35 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
             f = open(QEMU_IVSHMEM, "r")
             tmp = f.read()
             tmp = tmp.strip()
-            spp_dev_opts = tmp.split(" ")
+            spp_dev_opts = [] # spp_dev_opts is a 2d-array for several options.
+            spp_dev_opts.append(tmp.split(" ")) # in case of ring, only one option.
             f.close()
-        else:
+        else: # vhost
             # [TODO] restrict maximum num of vm_id defined in spp controller
             sock_id = vm_id  
             nic_vu = "net_vu%s" % vm_id  # NIC for vhost-user
-            spp_dev_opts = [
+            spp_dev_opts = [] # spp_dev_opts is a 2d-array for several options.
+            spp_dev_opts.append([
                    "-chardev", "socket,id=chr0,path=/tmp/sock%s" % sock_id,
                    "-netdev", "vhost-user,id=%s,chardev=chr0,vhostforce" % nic_vu,
                    "-device", "virtio-net-pci,netdev=%s" % nic_vu
-                   ]
+                   ])
+
+            # Attach several vhost interfaces (experimental)
+            if args.vhost_num > 1:
+                # index to avoid ids are overwrapped.
+                # socket id is named by appending numbers to original id from 0.
+                # for example, additional sock ids for sock11 are named as sock110,
+                # sock111, sock112, ... 
+                for i in range(0, args.vhost_num-1):
+                    spp_dev_opts.append([
+                           "-chardev",
+                           "socket,id=chr%s%s,path=/tmp/sock%s%s" % (sock_id, i, sock_id, i),
+                           "-netdev",
+                           "vhost-user,id=%s%s,chardev=chr%s%s,vhostforce" % (nic_vu, i, sock_id, i),
+                           "-device",
+                           "virtio-net-pci,netdev=%s%s" % (nic_vu, i)
+                           ])
 
         qemu_opts = [
                 "-cpu", "host",
@@ -173,7 +195,12 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
                 "-m", str(memsize),
                 "-smp", "cores=%s,threads=1,sockets=1" % cores,
                 "-nographic"
-                ] + hugepage_opts + nic_opts + spp_dev_opts + monitor_opts
+                ] + hugepage_opts + nic_opts 
+        
+        for spp_dev_opt in spp_dev_opts:
+            qemu_opts = qemu_opts + spp_dev_opt
+
+        qemu_opts = qemu_opts + monitor_opts
 
     return ["sudo", QEMU] + qemu_opts
 
