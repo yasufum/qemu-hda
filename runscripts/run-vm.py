@@ -216,8 +216,10 @@ def confirm_ivshmem():
 
 
 def main():
-    cores = CORES
-    memsize = MEMSIZE
+    #cores = CORES
+    cores = args.cores
+    #memsize = MEMSIZE
+    memsize = args.mem 
     nof_nwif = NOF_NWIF
 
     if args.vids == None:
