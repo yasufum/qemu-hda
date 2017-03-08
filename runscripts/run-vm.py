@@ -8,10 +8,10 @@ import argparse
 import shutil
 import re
 
-CORES = 2
-MEMSIZE = 2048
-NOF_NWIF = 1
+# Original HDA which is copied for each of VM instances.
 HDA = "ubuntu-16.04-server-amd64.qcow2"
+
+# Path configurations
 HOME = os.environ["HOME"]
 QEMU = HOME + "/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64"
 QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem" # it depends on dpdk
@@ -22,6 +22,7 @@ img_dir = work_dir + "/img"
 ifup_sh = "%s/../ifscripts/qemu-ifup.sh" % work_dir
 
 
+# Parse command-line options
 parser = argparse.ArgumentParser(description="Run SPP and VMs")
 parser.add_argument(
         "-i", "--vids",
@@ -43,6 +44,10 @@ parser.add_argument(
         "-vn", "--vhost-num",
         type=int, default=1,
         help="Number of vhost interfaces")
+parser.add_argument(
+        "-nn", "--nof-nwif",
+        type=int, default=1,
+        help="Number of network interfaces")
 args = parser.parse_args()
 
 
@@ -117,6 +122,7 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
         else:
             prefix = "v"
             macaddr = "00:AD:BE:EF:%02d:%02d"
+            virtio_macaddr = "00:AD:BE:FF:%02d:%02d"
             telnet_port = "448%02d"
 
         # NIC options
@@ -163,11 +169,12 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
             # [TODO] restrict maximum num of vm_id defined in spp controller
             sock_id = vm_id  
             nic_vu = "net_vu%s" % vm_id  # NIC for vhost-user
+            tmp_mac = virtio_macaddr % (vm_id, 0)
             spp_dev_opts = [] # spp_dev_opts is a 2d-array for several options.
             spp_dev_opts.append([
                    "-chardev", "socket,id=chr0,path=/tmp/sock%s" % sock_id,
                    "-netdev", "vhost-user,id=%s,chardev=chr0,vhostforce" % nic_vu,
-                   "-device", "virtio-net-pci,netdev=%s" % nic_vu
+                   "-device", "virtio-net-pci,netdev=%s,mac=%s" % (nic_vu, tmp_mac)
                    ])
 
             # Attach several vhost interfaces (experimental)
@@ -177,13 +184,14 @@ def gen_qemu_cmd(stype, vm_id, img_inst, cores, memsize, nof_nwif):
                 # for example, additional sock ids for sock11 are named as sock110,
                 # sock111, sock112, ... 
                 for i in range(0, args.vhost_num-1):
+                    tmp_mac = virtio_macaddr % (vm_id, i+1)
                     spp_dev_opts.append([
                            "-chardev",
                            "socket,id=chr%s%s,path=/tmp/sock%s%s" % (sock_id, i, sock_id, i),
                            "-netdev",
                            "vhost-user,id=%s%s,chardev=chr%s%s,vhostforce" % (nic_vu, i, sock_id, i),
                            "-device",
-                           "virtio-net-pci,netdev=%s%s" % (nic_vu, i)
+                           "virtio-net-pci,netdev=%s%s,mac=%s" % (nic_vu, i, tmp_mac)
                            ])
 
         qemu_opts = [
@@ -216,11 +224,9 @@ def confirm_ivshmem():
 
 
 def main():
-    #cores = CORES
     cores = args.cores
-    #memsize = MEMSIZE
     memsize = args.mem 
-    nof_nwif = NOF_NWIF
+    nof_nwif = args.nof_nwif
 
     if args.vids == None:
         print("Error: At least one VM ID with '-i' option must be required!")
