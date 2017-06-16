@@ -7,3 +7,4 @@ runscripts/*.img
 runscripts/*.qcow2
 runscripts/img/*.img
 runscripts/img/*.qcow2
+.DS_Store

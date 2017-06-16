@@ -1,18 +1,26 @@
-### What is this?
+# HDA image creator
+
+- [What is this](#what-is-this)
+- [How to use](#how-to-use)
+- [Setup QEMU](#setup-qemu)
+- [Run VM](#run-vm)
+
+
+## What is this
 
 Setup tools for creating and running VMs for SPP.
 
 
-### How to use
+## How to use
 
-#### (1) Get ISO file
+### Get ISO file
 
 This tools support Ubuntu (I've tested only 16.04, but 14.04 possibly run).
 Download ISO file form Ubuntu's web page.
 URLs are listed in [iso/iso-list.txt](iso/README.md).
 
 
-#### (2) Create VM image
+### Create VM image
 
 Put ISO file you downloaded into iso/ directory to be refered
 the from script.
@@ -26,7 +34,7 @@ There are four params in the script.
 
 Run the script as following.
 
-```
+```sh
 $ bash img_creator.sh
 ```
 
@@ -37,14 +45,14 @@ Finally, shutdown OEMU's window after finished installation by clicking close bu
 If you choose restart inside the window without close, QEMU attempts installation again.
 
 
-#### (3) Setup QEMU
+### Setup QEMU
 
 Before run VM using this tool, you have to setup specialized qemu
 for running DPDK with IVSHMEM.
 Currently it's included in repository of
 previous version of SPP (https://github.com/garogers01/soft-patch-panel).
 
-##### 3-1 Get source
+#### Get source
 
 Create a directory for download and get source from the repository.
 
@@ -54,7 +62,7 @@ $ cd  [WORK_DIR]
 $ git clone https://github.com/garogers01/soft-patch-panel.git
 ```
 
-##### 3-2 Compile
+#### Compile
 
 Move to `[WORK_DIR]` and run make command for compilation.
 
@@ -68,12 +76,12 @@ It would take a while to compile QEMU.
 Compiled executable `qemu-system-x86_64` is placed in `[WORK_DIR]/qemu-2.3.0/x86_64-softmmu/`.
 
 
-#### (4) Run VM
+### Run VM
 
 Now you can run VM of the image you created by using QEMU command.
 However, you had better to use run scripts as following than input command and options by hand.
 
-##### Setup
+#### Setup
 
 First, copy image file into runscript/ which you created by running `iso/img_creator.sh` in section (2).
 Then, you edit `runscript/run-vm.py` to identify your image from the script.
@@ -82,7 +90,7 @@ Each of them are defined as following params in the scripts.
   - QEMU: location of specialized QEMU's exec file.
   - HDA: image file you created.
 
-##### Usage
+#### Usage
 
 You are ready to run VM.
 But before run the script, you have to consider which type of SPP interfaces
