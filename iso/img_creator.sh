@@ -19,7 +19,7 @@ do
   esac
 done
 
-if [ -e ${ISO}]; then
+if [ -e ${ISO} ]; then
   ISO=ubuntu-16.04.2-server-amd64.iso
 fi
 
