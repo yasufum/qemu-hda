@@ -4,23 +4,29 @@
 # Init HDA file and boot VM for install ISO img
 # 
 
-while getopts i:s:f:c:m:h OPT
+URL=http://releases.ubuntu.com/16.04/
+FILE=ubuntu-16.04.2-server-amd64.iso
+SRCDIR=`dirname ${0}`
+
+while getopts di:s:f:c:m:h OPT
 do
   case ${OPT} in
+    "d" ) wget -c -P ${SRCDIR} ${URL}${FILE}
+          exit 0;;
     "i" ) ISO=${OPTARG};;
     "s" ) HDASIZE=${OPTARG};;
     "f" ) FORMAT=${OPTARG};;
     "c" ) CORES=${OPTARG};;
     "m" ) MEMSIZE=${OPTARG};;
-    "h" ) echo "Usage: ${CMDNAME} [-i ISO] [-s HDASIZE] [-c CORES] [-m MEMSIZE]"
+    "h" ) echo "Usage: ${CMDNAME} [-d] [-i ISO] [-s HDASIZE] [-c CORES] [-m MEMSIZE]"
           exit 0;;
-      * ) echo "Usage: ${CMDNAME} [-i ISO] [-s HDASIZE] [-c CORES] [-m MEMSIZE]" 1>&2
+      * ) echo "Usage: ${CMDNAME} [-d] [-i ISO] [-s HDASIZE] [-c CORES] [-m MEMSIZE]" 1>&2
           exit 1;;
   esac
 done
 
 if [ -e ${ISO} ]; then
-  ISO=ubuntu-16.04.2-server-amd64.iso
+  ISO=${SRCDIR}/ubuntu-16.04.2-server-amd64.iso
 fi
 
 if [ -e ${HDASIZE} ]; then

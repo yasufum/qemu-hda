@@ -1,28 +1,31 @@
-# HDA image creator
+# SPP VM Manager
 
 - [What is this](#what-is-this)
 - [How to use](#how-to-use)
-- [Setup QEMU](#setup-qemu)
+  - [Get ISO file](#get-iso-file)
+  - [Create VM image](#create-vm-image)
+- [Install QEMU](#install-qemu)
 - [Run VM](#run-vm)
 
 
 ## What is this
 
-Setup tools for creating and running VMs for SPP.
+Tools for creating and running a VM for
+[SPP](http://dpdk.org/browse/apps/spp/).
 
 
 ## How to use
 
 ### Get ISO file
 
-This tools support Ubuntu (I've tested only 16.04, but 14.04 possibly run).
-Download ISO file form Ubuntu's web page.
-URLs are listed in [iso/iso-list.txt](iso/README.md).
+First, download a ISO file form Ubuntu's web page
+to create HDA file and install Linux using the ISO file.
+Links are listed in [iso/README.md](iso/README.md).
 
 
 ### Create VM image
 
-Put ISO file you downloaded into iso/ directory to be refered
+Put the ISO file you download into iso/ directory to be refered
 the from script.
 
 Then, move to iso/ and edit, run `img_creator.sh` script.
@@ -45,7 +48,7 @@ Finally, shutdown OEMU's window after finished installation by clicking close bu
 If you choose restart inside the window without close, QEMU attempts installation again.
 
 
-### Setup QEMU
+### Install QEMU
 
 Before run VM using this tool, you have to setup specialized qemu
 for running DPDK with IVSHMEM.
