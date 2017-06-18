@@ -5,13 +5,13 @@
 # 
 
 URL=http://releases.ubuntu.com/16.04/
-FILE=ubuntu-16.04.2-server-amd64.iso
-SRCDIR=`dirname ${0}`
+ISO_FILE=ubuntu-16.04.2-server-amd64.iso
+SRC_DIR=`dirname ${0}`
 
 while getopts di:s:f:c:m:h OPT
 do
   case ${OPT} in
-    "d" ) wget -c -P ${SRCDIR} ${URL}${FILE}
+    "d" ) wget -c -P ${SRC_DIR} ${URL}${ISO_FILE}
           exit 0;;
     "i" ) ISO=${OPTARG};;
     "s" ) HDASIZE=${OPTARG};;
@@ -26,7 +26,7 @@ do
 done
 
 if [ -e ${ISO} ]; then
-  ISO=${SRCDIR}/ubuntu-16.04.2-server-amd64.iso
+  ISO=${SRC_DIR}/${ISO_FILE}
 fi
 
 if [ -e ${HDASIZE} ]; then
@@ -45,8 +45,7 @@ if [ -e ${MEMSIZE} ]; then
   MEMSIZE=4096
 fi
 
-HDA=${ISO%.*}.${FORMAT}
-
+HDA=${SRC_DIR}/${ISO_FILE%.*}.${FORMAT}
 
 # Create image
 qemu-img create -f ${FORMAT} ${HDA} ${HDASIZE}

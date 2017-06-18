@@ -2,9 +2,9 @@
 
 - [What is this](#what-is-this)
 - [How to use](#how-to-use)
+  - [Install QEMU](#install-qemu)
   - [Get ISO file](#get-iso-file)
   - [Create VM image](#create-vm-image)
-- [Install QEMU](#install-qemu)
 - [Run VM](#run-vm)
 
 
@@ -16,77 +16,80 @@ Tools for creating and running a VM for
 
 ## How to use
 
-### Get ISO file
-
-First, download a ISO file form Ubuntu's web page
-to create HDA file and install Linux using the ISO file.
-Links are listed in [iso/README.md](iso/README.md).
-
-
-### Create VM image
-
-Put the ISO file you download into iso/ directory to be refered
-the from script.
-
-Then, move to iso/ and edit, run `img_creator.sh` script.
-There are four params in the script.
-  - HDA: name of image file of VM.
-  - ISO: name of ISO you downloaded.
-  - FORMAT: format type of image file. qcow2 is better if you use KVM.
-  - HDASIZE: size of image file, 10G is adequate for ubuntu server.
-
-Run the script as following.
-
-```sh
-$ bash img_creator.sh
-```
-
-After run the script, QEMU opens another window for installation.
-So, you install Ubuntu by following the instructions.
-
-Finally, shutdown OEMU's window after finished installation by clicking close button of the window.
-If you choose restart inside the window without close, QEMU attempts installation again.
-
-
 ### Install QEMU
 
-Before run VM using this tool, you have to setup specialized qemu
-for running DPDK with IVSHMEM.
-Currently it's included in repository of
-previous version of SPP (https://github.com/garogers01/soft-patch-panel).
+If you use IVSHMEM, you need to get a custom version of QEMU from
+https://github.com/garogers01/soft-patch-panel.
+Currently, it only supports qemu-2.3.0.
 
-#### Get source
+Skip this section if you don't use customized QEMU.
 
-Create a directory for download and get source from the repository.
+Clone the source in any directory and setup it with options.
 
-```
+```sh
 $ mkdir [WORK_DIR]
 $ cd  [WORK_DIR]
 $ git clone https://github.com/garogers01/soft-patch-panel.git
-```
-
-#### Compile
-
-Move to `[WORK_DIR]` and run make command for compilation.
-
-```
 $ cd [WORK_DIR]/qemu-2.3.0
+
+# configure with option and make it  
 $ ./configure --enable-kvm --target-list=x86_64-softmmu --enable-vhost-net
 $ make
 ```
 
-It would take a while to compile QEMU.
-Compiled executable `qemu-system-x86_64` is placed in `[WORK_DIR]/qemu-2.3.0/x86_64-softmmu/`.
+Compilation would take a while.
+After compilation, executable `qemu-system-x86_64` is placed
+in `[WORK_DIR]/qemu-2.3.0/x86_64-softmmu/`.
+
+
+### Get ISO file
+
+First, download a ISO file of Ubuntu16.04 form Ubuntu's site
+to create HDA file and install Linux using the ISO file.
+Ubuntu 14.04 might work but not be recommended.
+
+Run `iso/img_creator.sh -d` to download the ISO file or download it
+from Ubuntu site.
+Links are listed in [iso/README.md](iso/README.md).
+
+`img_creator.sh` is a helper script for setup a VM image.
+It takes options as following.
+
+- h: Show help message
+- d: Download ISO of Ubuntu16.04
+- s: Size of HDA file (default is 8G)
+- c: Number of Cores of VM (default is 4)
+- m: Memory size of VM (default is 4096)
+- i: (optional) Path of the ISO
+
+### Create VM image
+
+Run `iso/img_creator.sh` to boot the VM with QEMU.
+This script assumes that ISO is stored as
+"iso/ubuntu-16.04.2-server-amd64.iso" or you give `-i`
+with path of ISO if you put other path or rename it.
+
+```sh
+$ bash iso/img_creator.sh
+```
+
+After run the script, QEMU opens another window for installation.
+
+Finally, shutdown OEMU's window after finished installation by clicking
+close button of the window.
+If you choose restart inside the window without close, QEMU attempts
+installation again.
 
 
 ### Run VM
 
-Now you can run VM of the image you created by using QEMU command.
-However, you had better to use run scripts as following than input command and options by hand.
+Now you can run VM using your image with QEMU.
+However, you had better to use run scripts as following than input command
+and options by hand.
 
 #### Setup
 
-First, copy image file into runscript/ which you created by running `iso/img_creator.sh` in section (2).
+First, copy image file into runscript/ which you created by `iso/img_creator.sh`.
 Then, you edit `runscript/run-vm.py` to identify your image from the script.
 You also edit the location of qemu executable.
 Each of them are defined as following params in the scripts.
