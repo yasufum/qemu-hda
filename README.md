@@ -1,4 +1,4 @@
-# SPP VM Manager
+# QEMU HDA Manager for SPP
 
 - [What is this](#what-is-this)
 - [How to use](#how-to-use)
@@ -10,7 +10,7 @@
 
 ## What is this
 
-Tools for creating and running a VM for
+Tools for creating HDA file and running a VM for
 [SPP](http://dpdk.org/browse/apps/spp/).
 
 
