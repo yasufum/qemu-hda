@@ -1,10 +1,11 @@
-images/*.img
-images/*.qcow2
+.*.swp
 iso/*.iso
 iso/*.img
 iso/*.qcow2
 runscripts/*.img
 runscripts/*.qcow2
+runscripts/template/*.img
+runscripts/template/*.qcow2
 runscripts/img/*.img
 runscripts/img/*.qcow2
 .DS_Store
