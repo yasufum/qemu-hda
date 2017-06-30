@@ -8,11 +8,8 @@ import argparse
 import shutil
 import re
 
-# Path configurations
-HOME = os.environ["HOME"]
-QEMU = HOME + "/dpdk-home/qemu-2.3.0/x86_64-softmmu/qemu-system-x86_64"
+# Configurations
 QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem" # for DPDK
-
 TYPE_PREFIX = {
         "normal": "n",
         "ring": "r",
@@ -32,9 +29,16 @@ def parse_args():
             type=str,
             help="Path of HDA file")
     parser.add_argument(
+            "-q", "--qemu",
+            type=str, default="qemu-system-x86_64",
+            help="Path of QEMU command, default is 'qemu-system-x86_64'"
+            )
+    parser.add_argument(
             "-i", "--vids",
             type=str, default="1",
-            help="VM IDs of positive number (exp. '1', '1,2,3' or '1-3')")
+            help="VM IDs of positive number, default is '1'" +
+            "(exp. '1', '1,2,3' or '1-3')"
+            )
     parser.add_argument(
             "-t", "--type",
             type=str,
@@ -42,19 +46,19 @@ def parse_args():
     parser.add_argument(
             "-c", "--cores",
             type=int, default=2,
-            help="Number of cores")
+            help="Number of cores, default is '2'")
     parser.add_argument(
             "-m", "--mem",
             type=int, default=2048,
-            help="Memory size")
+            help="Memory size, default is '2048'")
     parser.add_argument(
             "-vn", "--vhost-num",
             type=int, default=1,
-            help="Number of vhost interfaces")
+            help="Number of vhost interfaces, default is '1'")
     parser.add_argument(
             "-nn", "--nof-nwif",
             type=int, default=1,
-            help="Number of network interfaces")
+            help="Number of network interfaces, default is '1'")
     args = parser.parse_args()
     return args
 
@@ -109,7 +113,9 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
                     ]
             nic_opts = nic_opts + [
                     "-netdev",
-                    "tap,id=%s,ifname=%s,script=%s" % (tmp_netdev, tmp_netdev, ifup_sh)
+                    "tap,id=%s,ifname=%s,script=%s" % (
+                        tmp_netdev, tmp_netdev, ifup_sh
+                        )
                     ]
 
         # monitor options
@@ -152,7 +158,9 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
                     ]
             nic_opts = nic_opts + [
                     "-netdev",
-                    "tap,id=%s,ifname=%s,script=%s" % (tmp_netdev, tmp_netdev, ifup_sh)
+                    "tap,id=%s,ifname=%s,script=%s" % (
+                        tmp_netdev, tmp_netdev, ifup_sh
+                        )
                     ]
 
         # monitor options
@@ -178,7 +186,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             f = open(QEMU_IVSHMEM, "r")
             tmp = f.read()
             tmp = tmp.strip()
-            spp_dev_opts.append(tmp.split(" ")) # in case of ring, only one option.
+            spp_dev_opts.append(tmp.split(" ")) # if ring, only one option.
             f.close()
         elif args.type == "vhost":
             # Attach several vhost interfaces
@@ -192,11 +200,17 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
                 virt_mac = macaddr["virtio"] % (vid, i)
                 spp_dev_opts.append([
                        "-chardev",
-                       "socket,id=chr%s%s,path=/tmp/sock%s%s" % (sock_id, i, sock_id, i),
+                       "socket,id=chr%s%s,path=/tmp/sock%s%s" % (
+                           sock_id, i, sock_id, i
+                           ),
                        "-netdev",
-                       "vhost-user,id=%s%s,chardev=chr%s%s,vhostforce" % (nic_vu, i, sock_id, i),
+                       "vhost-user,id=%s%s,chardev=chr%s%s,vhostforce" % (
+                           nic_vu, i, sock_id, i
+                           ),
                        "-device",
-                       "virtio-net-pci,netdev=%s%s,mac=%s" % (nic_vu, i, virt_mac)
+                       "virtio-net-pci,netdev=%s%s,mac=%s" % (
+                           nic_vu, i, virt_mac
+                           )
                        ])
     else:
         print("Error: Invalid VM type!")
@@ -218,7 +232,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
 
     qemu_opts = qemu_opts + monitor_opts
 
-    return ["sudo", QEMU] + qemu_opts
+    return ["sudo", args.qemu] + qemu_opts
 
     
 def confirm_ivshmem():
@@ -248,7 +262,8 @@ def parse_vids(vids_str):
         exit(1)
 
     vids = []
-    # First, separate with ",", then "-" and complete between the range of 'x-y'
+    # First, separate with ",", then "-" and complete between the
+    # range of 'x-y'
     for ss in vids_str.split(","):
         if re.match(r'^\d+-\d+', ss):
             rng = ss.split("-")
