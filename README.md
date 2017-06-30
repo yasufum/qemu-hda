@@ -3,6 +3,7 @@
 - [What is this](#what-is-this)
 - [How to use](#how-to-use)
   - [Install QEMU](#install-qemu)
+    - [DPDK and IVSHMEM](#dpdk-and-ivshmem)
   - [Get ISO file](#get-iso-file)
   - [Create VM image](#create-vm-image)
 - [Run VM](#run-vm)
@@ -18,7 +19,12 @@ Tools for creating HDA file and running a VM for
 
 ### Install QEMU
 
-If you use IVSHMEM, you need to get a custom version of QEMU from
+This tool is tested only for qemu-2.3.0 (might work for 2.4.0).
+Options might be invaid for version 2.5 or later.
+
+#### DPDK and IVSHMEM
+
+If you use DPDK with IVSHMEM, you need to get a custom version of QEMU from
 https://github.com/garogers01/soft-patch-panel.
 Currently, it only supports qemu-2.3.0.
 
@@ -44,7 +50,7 @@ in `[WORK_DIR]/qemu-2.3.0/x86_64-softmmu/`.
 
 ### Get ISO file
 
-First, download a ISO file of Ubuntu16.04 form Ubuntu's site
+First, download ISO file of Ubuntu16.04 from Ubuntu's site
 to create HDA file and install Linux using the ISO file.
 Ubuntu 14.04 might work but not be recommended.
 
@@ -55,19 +61,22 @@ Links are listed in [iso/README.md](iso/README.md).
 `img_creator.sh` is a helper script for setup a VM image.
 It takes options as following.
 
-- h: Show help message
-- d: Download ISO of Ubuntu16.04
-- s: Size of HDA file (default is 8G)
-- c: Number of Cores of VM (default is 4)
-- m: Memory size of VM (default is 4096)
-- i: (optional) Path of the ISO
+- -h: Show help message
+- -d: Download ISO of Ubuntu16.04
+- -s: Size of HDA file (default is 8G)
+- -c: Number of Cores of VM (default is 4)
+- -m: Memory size of VM (default is 4096)
+- -i: (optional) Path of the ISO
 
 ### Create VM image
 
 Run `iso/img_creator.sh` to boot the VM with QEMU.
 This script assumes that ISO is stored as
-"iso/ubuntu-16.04.2-server-amd64.iso" or you give `-i`
-with path of ISO if you put other path or rename it.
+"iso/ubuntu-16.04.2-server-amd64.iso".
+You can give the path with `-i` option
+if you put other path or rename it.
+
+If 'img_creator.sh` cannot find ISO, it starts downloading before installation.
 
 ```sh
 $ bash iso/img_creator.sh
@@ -81,52 +90,73 @@ If you choose restart inside the window without close, QEMU attempts
 installation again.
 
 
-### Run VM
+### Run VMs
 
-Now you can run VM using your image with QEMU.
-However, you had better to use run scripts as following than input command
-and options by hand.
-
-#### Setup
-
-First, copy image file into runscript/ which you created by `iso/img_creator.sh`.
-Then, you edit `runscript/run-vm.py` to identify your image from the script.
-You also edit the location of qemu executable.
-Each of them are defined as following params in the scripts.
-  - QEMU: location of specialized QEMU's exec file.
-  - HDA: image file you created.
+`run-vm.py` is a helper script for running VMs for SPP.
 
 #### Usage
 
-You are ready to run VM.
-But before run the script, you have to consider which type of SPP interfaces
-you use, or don't use.
+Before run the script, you have to consider which type of SPP interfaces
+you use.
 SPP supports two types of interface, `ring` and `vhost` to communicate with VMs.
-Please refer [setup guide](http://dpdk.org/browse/apps/spp/tree/docs/setup_guide.md) of SPP for details.
+Please refer
+[setup guide](http://dpdk.org/browse/apps/spp/tree/docs/setup_guide.md)
+of SPP for details.
+You can also run VMs without SPP interface.
 
-You have to give a type with `-t` option.
-There three types.
-For `none` type, the script run from HDA and doesn't use SPP interface.
+You have to give the path of HDA and interface type while running
+the script.
 
-  - ring
-  - vhost
-  - none
+First time you run the scirpt, it creates copies of HDA in
+`runscripts/template/`.
+Template file is a kind of parent images of each of VMs.
+Each of VMs is launched using child of template file.
+Install SPP and setup for each each of interfaces.
+
+Image file is named as `r0-ubuntu-16.04.2-server-amd64.qcow2`
+which means "(type-prefix)(vid)-(original-hda-filename)".
+Template is assigned the number 0 for vid.
+
+If template exists, `run-vm.py` copies image from template for launching VM.
+
+```
+runscripts/
+      |--template/r0-ubuntu-16.04.2-server-amd64.qcow2
+      |--img/
+          |--r1-ubuntu-16.04.2-server-amd64.qcow2
+          |--r2-ubuntu-16.04.2-server-amd64.qcow2
+          |-- ...
+```
+
+There are four types, `normal`, `ring`, `vhost` and `orig`. 
+`ring` and `vhost` are SPP interfaces.
+On the other hand, `normal` runs VMs without SPP interfaces.
+`orig` type is for using original HDA to update itself.
 
 To refer help message, run the script with `-h` option.
 
 ```sh
 $ ./run-vm.py -h
-usage: run-vm.py [-h] [-i VIDS] [-t TYPE] [-c CORES] [-m MEM]
+usage: run-vm.py [-h] [-f HDA_FILE] [-q QEMU] [-i VIDS] [-t TYPE] [-c CORES]
+                 [-m MEM] [-vn VHOST_NUM] [-nn NOF_NWIF]
 
 Run SPP and VMs
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i VIDS, --vids VIDS  VM IDs
-  -t TYPE, --type TYPE  Interface type ('ring','vhost' and 'none')
+  -f HDA_FILE, --hda-file HDA_FILE
+                        Path of HDA file
+  -q QEMU, --qemu QEMU  Path of QEMU command, default is 'qemu-system-x86_64'
+  -i VIDS, --vids VIDS  VM IDs of positive number, default is '1'(exp. '1',
+                        '1,2,3' or '1-3')
+  -t TYPE, --type TYPE  Interface type ('normal','ring','vhost' or 'orig')
   -c CORES, --cores CORES
-                        Number of cores
-  -m MEM, --mem MEM     Memory size
+                        Number of cores, default is '2'
+  -m MEM, --mem MEM     Memory size, default is '2048'
+  -vn VHOST_NUM, --vhost-num VHOST_NUM
+                        Number of vhost interfaces, default is '1'
+  -nn NOF_NWIF, --nof-nwif NOF_NWIF
+                        Number of network interfaces, default is '1'
 ```
 
 You can run one or more VMs at once with `-i` option which is for VM IDs.
@@ -134,17 +164,17 @@ You have to give at least one VM ID.
 
 ```sh
 # one ring VM 
-$ ./run-vm.py -t ring -i 5
+$ ./run-vm.py -t ring -i 5 -h [HDA]
 
 # two vhost VMs
-$ ./run-vm.py -t vhost -i 11,12
+$ ./run-vm.py -t vhost -i 11,12 -h [HDA]
 
 # three ring VMs 
-$ ./run-vm.py -t ring -i 5,6,7
+$ ./run-vm.py -t ring -i 5,6,7 -h [HDA]
 # or 
-$ ./run-vm.py -t ring -i 5-7
+$ ./run-vm.py -t ring -i 5-7 -h [HDA]
 # or 
-$ ./run-vm.py -t ring -i 5,6-7
+$ ./run-vm.py -t ring -i 5,6-7 -h [HDA]
 ```
 
 For `none` type, you can only one VM and VM ID is discarded (but required).
