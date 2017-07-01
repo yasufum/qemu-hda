@@ -160,29 +160,31 @@ optional arguments:
 ```
 
 You can run one or more VMs at once with `-i` option which is for VM IDs.
-You have to give at least one VM ID.
+Default VM ID 1 is assigned if `-i` is abbreviated.
 
 ```sh
-# one ring VM 
-$ ./run-vm.py -t ring -i 5 -h [HDA]
+# one ring VM with default ID 1
+$ ./run-vm.py -t ring -f [HDA]
 
 # two vhost VMs
-$ ./run-vm.py -t vhost -i 11,12 -h [HDA]
+$ ./run-vm.py -t vhost -i 11,12 -f [HDA]
 
 # three ring VMs 
-$ ./run-vm.py -t ring -i 5,6,7 -h [HDA]
+$ ./run-vm.py -t ring -i 5,6,7 -f [HDA]
 # or 
-$ ./run-vm.py -t ring -i 5-7 -h [HDA]
+$ ./run-vm.py -t ring -i 5-7 -f [HDA]
 # or 
-$ ./run-vm.py -t ring -i 5,6-7 -h [HDA]
+$ ./run-vm.py -t ring -i 5,6-7 -f [HDA]
 ```
 
-For `none` type, you can only one VM and VM ID is discarded (but required).
+You can also run VM from original or template HDA.
+To run orig, give `-t orig` option. 
+On the other hand, run template by assigning VM ID 0.
 
 ```sh
-$ ./run-vm.py -t none -i 99
+# boot from orig HDA
+$ ./run-vm.py -t orig -f [HDA]
 
-# Error because giving several IDs
-$ ./run-vm.py -t none -i 98,99
-Error: You use only one VM with type 'none'
+# boot from template of ring
+$ ./run-vm.py -t ring -i 0 -f [HDA]
 ```

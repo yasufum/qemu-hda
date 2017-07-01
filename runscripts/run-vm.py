@@ -106,7 +106,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
         nic_opts = []
         for i in range(0, args.nof_nwif):
             tmp_mac = macaddr["orig"] % i
-            tmp_netdev = "net_0_%s" % i
+            tmp_netdev = "net_o0_%s" % i
             nic_opts = nic_opts + [
                     "-device",
                     "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
@@ -151,7 +151,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
         nic_opts = []
         for i in range(0, args.nof_nwif):
             tmp_mac = macaddr[args.type] % (vid, i)
-            tmp_netdev = "net_%s%s" % (TYPE_PREFIX[args.type], i)
+            tmp_netdev = "net_%s%s_%s" % (TYPE_PREFIX[args.type], vid, i)
             nic_opts = nic_opts + [
                     "-device",
                     "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
@@ -208,7 +208,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
                            nic_vu, i, sock_id, i
                            ),
                        "-device",
-                       "virtio-net-pci,netdev=%s%s,mac=%s" % (
+                       "virtio-net-pci,netdev=%s_%s,mac=%s" % (
                            nic_vu, i, virt_mac
                            )
                        ])
@@ -268,10 +268,10 @@ def parse_vids(vids_str):
         if re.match(r'^\d+-\d+', ss):
             rng = ss.split("-")
             for i in range(int(rng[0]), int(rng[1])+1):
-                if i > 0:
+                if i >= 0:
                     vids.append(i)
         else:
-            if int(ss) > 0:
+            if int(ss) >= 0:
                 vids.append(int(ss))
     
     # Remove overlapped elements and return it
@@ -325,31 +325,41 @@ def main():
     hda = args.hda_file.split("/")[-1]
     img_tmpl = "%s/%s%d-%s" % (tmpl_dir, TYPE_PREFIX[args.type], 0, hda)
 
+    # If type is "orig", or template does not exist,
+    # vids option is igrenored and single VM is started.
     if args.type == "orig":
+        print("Booting VM from %s ..." % args.hda_file)
         qemu_cmds.append(
                 gen_qemu_cmd(args, 0, args.hda_file, ifup_sh)
                 )
-
+    # case of template does not exist
     elif (not os.path.exists(img_tmpl)):
         # Create template
         shutil.copy(args.hda_file, img_tmpl)
+        print("Booting VM from %s ..." % img_tmpl)
         qemu_cmds.append(
                 gen_qemu_cmd(args, 0, img_tmpl, ifup_sh)
                 )
+    # Boot VMs of vids option
     else:
         for vid in vids:
-            img_inst = "%s/%s%s-%s" % (img_dir, TYPE_PREFIX[args.type], vid, hda)
+            if vid == 0:
+                imgfile = img_tmpl
+            else:
+                img_inst = "%s/%s%s-%s" % (
+                        img_dir, TYPE_PREFIX[args.type], vid, hda
+                        )
+                if (not os.path.exists(img_inst)):
+                    # Create instance
+                    shutil.copy(img_tmpl, img_inst)
+                imgfile = img_inst
 
-            if (not os.path.exists(img_inst)):
-                # Create instance
-                shutil.copy(img_tmpl, img_inst)
-            imgfile = img_inst
-
+            print("Booting VM from %s ..." % imgfile)
             qemu_cmds.append(
                     gen_qemu_cmd(args, vid, imgfile, ifup_sh)
                     )
 
-    # To stop running qemu in background before input password, do sudo.
+    # Before running qemu in background, do sudo to input password.
     subprocess.call(["sudo", "pwd"])
 
     for qc in qemu_cmds:
