@@ -6,7 +6,7 @@
 
 # Params
 URL=http://releases.ubuntu.com/16.04/
-ISO_FILE=ubuntu-16.04.2-server-amd64.iso
+ISO_FILE=ubuntu-16.04.3-server-amd64.iso
 SRC_DIR=`dirname ${0}`
 
 # Parsing args
