@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
-import yaml
-import subprocess
 import argparse
-import shutil
+import os
 import re
+import shutil
+import subprocess
 
 # Configurations
 QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem" # for DPDK
@@ -64,7 +63,7 @@ def parse_args():
 
 
 def print_qemu_cmd(args):
-    """Show qemu command options"""
+    """Format and show qemu command options"""
     
     _args = args[:]
     while len(_args) > 1:
@@ -79,9 +78,24 @@ def print_qemu_cmd(args):
         else:
             print("  %s" % _args.pop(0))
 
+def qemu_version(qemu):
+    """ Return version of qemu"""
+
+    cmd = "%s -version" % qemu
+    res = subprocess.check_output(cmd.split())
+    
+    ptn = "QEMU emulator version (\d+.\d+.\d+)"
+    matched = re.match(ptn, res)
+    
+    return matched.group(1)
+
 
 def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
     """Generate qemu options and return as a list for subprocess"""
+
+    # Get qemu version to switch generating options.
+    # Some of options are different between each versions.
+    qemu_ver = qemu_version(args.qemu)
 
     macaddr = {
         "orig":   "00:AD:BE:B0:FF:%02d",
@@ -124,7 +138,6 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
                 "telnet::%s,server,nowait" % telnet_port["orig"]
                 ]
 
-        # object(hugepage) options
         hugepage_opt = [
                 "memory-backend-file",
                 "id=mem",

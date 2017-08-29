@@ -41,7 +41,7 @@ if [ -e ${ISO} ]; then
 fi
 
 if [ -e ${HDASIZE} ]; then
-  HDASIZE=8G
+  HDASIZE=10G
 fi
 
 if [ -e ${FORMAT} ]; then
