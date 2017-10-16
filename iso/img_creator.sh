@@ -1,17 +1,24 @@
 #!/bin/bash
 
 ###
-# Init HDA file and boot VM for install ISO img
+# Create and setup HDA file
 # 
 
-# Params
-URL=http://releases.ubuntu.com/16.04/
+# Default params
+CORES=4
+MEMSIZE=4096
+HDASIZE=10G
+FORMAT=qcow2  # HDA format
+
+# Default iso file
 ISO_FILE=ubuntu-16.04.3-server-amd64.iso
+URL=http://releases.ubuntu.com/16.04/${ISO_FILE}
+
 SRC_DIR=`dirname ${0}`
 
 # Parsing args
 # option: 
-#   -d : only download iso and exit
+#   -d : only download iso
 #   -i : path of iso for booting VM
 #   -s : size of HDA file
 #   -f : format of HDA (default is qcow2)
@@ -40,25 +47,10 @@ if [ -e ${ISO} ]; then
   ISO=${SRC_DIR}/${ISO_FILE}
 fi
 
-if [ -e ${HDASIZE} ]; then
-  HDASIZE=10G
-fi
-
-if [ -e ${FORMAT} ]; then
-  FORMAT=qcow2
-fi
-
-if [ -e ${CORES} ]; then
-  CORES=4
-fi
-
-if [ -e ${MEMSIZE} ]; then
-  MEMSIZE=4096
-fi
-
 # Download iso if not exist
 if [ ! -f ${ISO} ]; then
-  wget -c -P ${SRC_DIR} ${URL}${ISO_FILE}
+  echo "Downloading iso file..."
+  wget -c -P ${SRC_DIR} ${URL}
 fi
 
 
