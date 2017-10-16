@@ -162,6 +162,10 @@ optional arguments:
 You can run one or more VMs at once with `-i` option which is for VM IDs.
 Default VM ID 1 is assigned if `-i` is abbreviated.
 
+[NOTE] You have to set mem size larger than hugepages to avoid kernel panic.
+For example, if your hugepage is 2MB x 1024, mem size must be larger than
+2048.
+
 ```sh
 # one ring VM with default ID 1
 $ ./run-vm.py -t ring -f [HDA]
