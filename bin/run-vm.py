@@ -7,14 +7,16 @@ import re
 import shutil
 import subprocess
 
-# Configurations
-QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem"  # for DPDK
+# Prefix for hda files to identify which of types.
 TYPE_PREFIX = {
     "normal": "n",
     "ring": "r",
     "vhost": "v",
     "orig": None
 }
+
+# for DPDK 16.07
+QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem"
 
 
 def parse_args():
@@ -67,7 +69,7 @@ def parse_args():
 
 
 def print_qemu_cmd(args):
-    """Show qemu command options"""
+    """Show qemu command options in well formatted style"""
 
     _args = args[:]
     while len(_args) > 1:
@@ -317,13 +319,13 @@ def parse_vids(vids_str):
 
 def main():
 
-    work_dir = os.path.dirname(__file__)
-    tmpl_dir = work_dir + "/template"
-    img_dir = work_dir + "/img"
-    ifup_sh = "%s/../ifscripts/qemu-ifup.sh" % work_dir
+    proj_dir = os.path.dirname(__file__) + "/.."  # Project root dir.
+    tmpl_dir = "%s/hda/templates" % proj_dir
+    inst_dir = "%s/hda/instances" % proj_dir
+    ifup_sh = "%s/ifscripts/qemu-ifup.sh" % proj_dir
 
     subprocess.call(["mkdir", "-p", tmpl_dir])
-    subprocess.call(["mkdir", "-p", img_dir])
+    subprocess.call(["mkdir", "-p", inst_dir])
 
     args = parse_args()
 
@@ -348,22 +350,28 @@ def main():
     qemu_cmds = []
 
     # Create template and instance files.
-    # Template file is a parent and instances generated from tempalte are
-    # children. Instance is created by copying from template.
-    #     work_dir/  (names are dummy and different from actual filename)
-    #           |--template/n0-ubuntu1604.qcow2
-    #           |--img/
-    #               |--n1-ubuntu1604.qcow2
-    #               |--n2-ubuntu1604.qcow2
-    #               |-- ...
-    # Filename is assinged as (prefix)+(vid)+(hda-name).
-    # For example, "n0-ubuntu-16.04.2-server-amd64.qcow2" for template and
-    # "n1-ubuntu-16.04.2-server-amd64.qcow2" for instance id 1.
+    # Template is a parent and instances are children copied from
+    # tempalte.
+    #
+    # proj_dir/hda/
+    #             |--ubuntu1604.qcow2  # original
+    #             |--templates/n0-ubuntu1604.qcow2  # template
+    #             |--instances/
+    #                 |--n1-ubuntu1604.qcow2  # instances
+    #                 |--n2-ubuntu1604.qcow2
+    #                 |-- ...
+    #
+    # The name of file is assinged as PREFIX-VID-HDA_NAME.
+    # For example, template (vid is 0) of normal type is named as
+    # "n0-ubuntu-16.04.2-server-amd64.qcow2".
+    # Instance of vid 1 is "n1-ubuntu-16.04.2-server-amd64.qcow2".
     hda = args.hda_file.split("/")[-1]
+
+    # Template is defined with vid 0.
     img_tmpl = "%s/%s%d-%s" % (tmpl_dir, TYPE_PREFIX[args.type], 0, hda)
 
-    # If type is "orig", or template does not exist,
-    # vids option is igrenored and single VM is started.
+    # If type is "orig" or template does not exist, vids option is
+    # igrenored to launch original or template VM.
     if args.type == "orig":
         print("Booting VM from %s ..." % args.hda_file)
         qemu_cmds.append(
@@ -384,7 +392,7 @@ def main():
                 imgfile = img_tmpl
             else:
                 img_inst = "%s/%s%s-%s" % (
-                    img_dir, TYPE_PREFIX[args.type], vid, hda
+                    inst_dir, TYPE_PREFIX[args.type], vid, hda
                 )
                 if (not os.path.exists(img_inst)):
                     # Create instance
