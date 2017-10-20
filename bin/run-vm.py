@@ -8,66 +8,70 @@ import shutil
 import subprocess
 
 # Configurations
-QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem" # for DPDK
+QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem"  # for DPDK
 TYPE_PREFIX = {
-        "normal": "n",
-        "ring": "r",
-        "vhost": "v",
-        "orig": None
-        }
+    "normal": "n",
+    "ring": "r",
+    "vhost": "v",
+    "orig": None
+}
 
 
 def parse_args():
-    """
-    Parse command-line options and return arg obj.
-    """
+    """Parse command-line options and return arg obj"""
 
     parser = argparse.ArgumentParser(description="Run SPP and VMs")
     parser.add_argument(
-            "-f", "--hda-file",
-            type=str,
-            help="Path of HDA file")
+        "-f", "--hda-file",
+        type=str,
+        help="Path of HDA file")
     parser.add_argument(
-            "-q", "--qemu",
-            type=str, default="qemu-system-x86_64",
-            help="Path of QEMU command, default is 'qemu-system-x86_64'"
-            )
+        "-q", "--qemu",
+        type=str, default="qemu-system-x86_64",
+        help="Path of QEMU command, default is 'qemu-system-x86_64'")
     parser.add_argument(
-            "-i", "--vids",
-            type=str, default="1",
-            help="VM IDs of positive number, default is '1'" +
-            "(exp. '1', '1,2,3' or '1-3')"
-            )
+        "-i", "--vids",
+        type=str, default="1",
+        help="VM IDs of positive number, default is '1'" +
+        "(exp. '1', '1,2,3' or '1-3')")
     parser.add_argument(
-            "-t", "--type",
-            type=str,
-            help="Interface type ('normal','ring','vhost' or 'orig')")
+        "-t", "--type",
+        type=str,
+        help="Interface type ('normal','ring','vhost' or 'orig')")
     parser.add_argument(
-            "-c", "--cores",
-            type=int, default=2,
-            help="Number of cores, default is '2'")
+        "-c", "--cores",
+        type=int, default=2,
+        help="Number of cores, default is '2'")
     parser.add_argument(
-            "-m", "--mem",
-            type=int, default=2048,
-            help="Memory size, default is '2048'")
+        "-m", "--mem",
+        type=int, default=4096,
+        help="Memory size, default is '4096'")
     parser.add_argument(
-            "-vn", "--vhost-num",
-            type=int, default=1,
-            help="Number of vhost interfaces, default is '1'")
+        "-vn", "--vhost-num",
+        type=int, default=1,
+        help="Number of vhost interfaces, default is '1'")
     parser.add_argument(
-            "-nn", "--nof-nwif",
-            type=int, default=1,
-            help="Number of network interfaces, default is '1'")
+        "-vc", "--vhost-client",
+        action='store_true',
+        help="Enable vhost-client mode, default is False")
+    parser.add_argument(
+        "--graphic",
+        action='store_true',
+        help="Enable graphic mode, default is False")
+    parser.add_argument(
+        "-nn", "--nof-nwif",
+        type=int, default=1,
+        help="Number of network interfaces, default is '1'")
     args = parser.parse_args()
     return args
 
 
 def print_qemu_cmd(args):
-    """Format and show qemu command options"""
-    
+    """Show qemu command options"""
+
     _args = args[:]
     while len(_args) > 1:
-        if _args[1] != None and (not re.match(r'^-', _args[1])):
+        if _args[1] is not None and (not re.match(r'^-', _args[1])):
             ary = []
             for i in range(0, 2):
                 ary.append(_args.pop(0))
@@ -78,24 +82,26 @@ def print_qemu_cmd(args):
         else:
             print("  %s" % _args.pop(0))
 
+
 def qemu_version(qemu):
-    """ Return version of qemu"""
+    """Return version of qemu
+
+    Params for qemu is different between its versions.
+    This function is intented to use switch generating params
+    for each of versions.
+    """
 
     cmd = "%s -version" % qemu
     res = subprocess.check_output(cmd.split())
-    
+
     ptn = "QEMU emulator version (\d+.\d+.\d+)"
     matched = re.match(ptn, res)
-    
+
     return matched.group(1)
 
 
 def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
     """Generate qemu options and return as a list for subprocess"""
-
-    # Get qemu version to switch generating options.
-    # Some of options are different between each versions.
-    qemu_ver = qemu_version(args.qemu)
 
     macaddr = {
         "orig":   "00:AD:BE:B0:FF:%02d",
@@ -106,14 +112,14 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
         }
 
     telnet_port = {
-            "orig":   "44600",
-            "normal": "447%02d",
-            "ring":   "448%02d",
-            "vhost":  "449%02d"
-            }
+        "orig":   "44600",
+        "normal": "447%02d",
+        "ring":   "448%02d",
+        "vhost":  "449%02d"
+    }
 
     # spp's device options (ring or vhost)
-    spp_dev_opts = [] # spp_dev_opts is a 2d-array for several options.
+    spp_dev_opts = []  # spp_dev_opts is a 2d-array for several options.
 
     if args.type == "orig":
         # NIC options
@@ -122,42 +128,44 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             tmp_mac = macaddr["orig"] % i
             tmp_netdev = "net_o0_%s" % i
             nic_opts = nic_opts + [
-                    "-device",
-                    "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
-                    ]
+                "-device",
+                "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
+            ]
             nic_opts = nic_opts + [
-                    "-netdev",
-                    "tap,id=%s,ifname=%s,script=%s" % (
-                        tmp_netdev, tmp_netdev, ifup_sh
-                        )
-                    ]
+                "-netdev",
+                "tap,id=%s,ifname=%s,script=%s" % (
+                    tmp_netdev, tmp_netdev, ifup_sh
+                )
+            ]
 
         # monitor options
         monitor_opts = [
-                "-monitor",
-                "telnet::%s,server,nowait" % telnet_port["orig"]
-                ]
+            "-monitor",
+            "telnet::%s,server,nowait" % telnet_port["orig"]
+        ]
 
+        # object(hugepage) options
         hugepage_opt = [
-                "memory-backend-file",
-                "id=mem",
-                "size=%sM" % args.mem,
-                "mem-path=/dev/hugepages",
-                "share=on"
-                ]
+            "memory-backend-file",
+            "id=mem",
+            "size=%sM" % args.mem,
+            "mem-path=/dev/hugepages",
+            "share=on"
+        ]
         hugepage_opt = ",".join(hugepage_opt)
         hugepage_opts = ["-object", hugepage_opt]
 
         qemu_opts = [
-                "-cpu", "host",
-                "-enable-kvm",
-                "-numa", "node,memdev=mem",
-                "-mem-prealloc",
-                "-hda", imgfile,
-                "-m", str(args.mem),
-                "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
-                "-nographic"
-                ] + hugepage_opts + nic_opts + monitor_opts
+            "-cpu", "host",
+            "-enable-kvm",
+            "-numa", "node,memdev=mem",
+            "-mem-prealloc",
+            "-hda", imgfile,
+            "-m", str(args.mem),
+            "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
+        ] + hugepage_opts + nic_opts + monitor_opts
+        if args.graphic is False:
+            qemu_opts.append("-nographic")
 
     elif (args.type in ["normal", "ring", "vhost"]):
         # NIC options
@@ -166,31 +174,31 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             tmp_mac = macaddr[args.type] % (vid, i)
             tmp_netdev = "net_%s%s_%s" % (TYPE_PREFIX[args.type], vid, i)
             nic_opts = nic_opts + [
-                    "-device",
-                    "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
-                    ]
+                "-device",
+                "e1000,netdev=%s,mac=%s" % (tmp_netdev, tmp_mac)
+            ]
             nic_opts = nic_opts + [
-                    "-netdev",
-                    "tap,id=%s,ifname=%s,script=%s" % (
-                        tmp_netdev, tmp_netdev, ifup_sh
-                        )
-                    ]
+                "-netdev",
+                "tap,id=%s,ifname=%s,script=%s" % (
+                    tmp_netdev, tmp_netdev, ifup_sh
+                )
+            ]
 
         # monitor options
         tport = telnet_port[args.type] % vid
         monitor_opts = [
-                "-monitor",
-                "telnet::%s,server,nowait" % tport
-                ]
+            "-monitor",
+            "telnet::%s,server,nowait" % tport
+        ]
 
         # object(hugepage) options
         hugepage_opt = [
-                "memory-backend-file",
-                "id=mem",
-                "size=%sM" % args.mem,
-                "mem-path=/dev/hugepages",
-                "share=on"
-                ]
+            "memory-backend-file",
+            "id=mem",
+            "size=%sM" % args.mem,
+            "mem-path=/dev/hugepages",
+            "share=on"
+        ]
         hugepage_opt = ",".join(hugepage_opt)
         hugepage_opts = ["-object", hugepage_opt]
 
@@ -199,47 +207,61 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             f = open(QEMU_IVSHMEM, "r")
             tmp = f.read()
             tmp = tmp.strip()
-            spp_dev_opts.append(tmp.split(" ")) # if ring, only one option.
+            spp_dev_opts.append(tmp.split(" "))  # if ring, only one option.
             f.close()
         elif args.type == "vhost":
-            # Attach several vhost interfaces
-            sock_id = vid  
-            nic_vu = "net_vu%s" % vid  # NIC for vhost-user
+            if vid != 0:
+                # Attach several vhost interfaces
+                sock_id = vid
+                nic_vu = "net_vu%s" % vid  # NIC for vhost-user
 
-            # TODO Consider assignment of sock id
-            # Additional socket id is defined by adding from 0 to sock id.
-            # For example, sock110, sock111, ... for sock11
-            for i in range(0, args.vhost_num-1):
-                virt_mac = macaddr["virtio"] % (vid, i)
-                spp_dev_opts.append([
-                       "-chardev",
-                       "socket,id=chr%s%s,path=/tmp/sock%s%s" % (
-                           sock_id, i, sock_id, i
-                           ),
-                       "-netdev",
-                       "vhost-user,id=%s%s,chardev=chr%s%s,vhostforce" % (
-                           nic_vu, i, sock_id, i
-                           ),
-                       "-device",
-                       "virtio-net-pci,netdev=%s_%s,mac=%s" % (
-                           nic_vu, i, virt_mac
-                           )
-                       ])
+                # TODO(yasufum) Consider assignment of sock id
+                # Additional socket id is defined by adding from 0 to sock id.
+                # For example, sock110, sock111, ... for sock11
+                for i in range(0, args.vhost_num):
+                    virt_mac = macaddr["virtio"] % (vid, i)
+
+                    if args.vhost_client is True:
+                        spp_dev_opts.append([
+                            "-chardev",
+                            "socket,id=chr%s%s,path=/tmp/sock%s%s,server" % (
+                                sock_id, i, sock_id, i
+                            )
+                        ])
+                    else:
+                        spp_dev_opts.append([
+                            "-chardev",
+                            "socket,id=chr%s%s,path=/tmp/sock%s%s" % (
+                                sock_id, i, sock_id, i
+                            )
+                        ])
+
+                    spp_dev_opts.append([
+                        "-netdev",
+                        "vhost-user,id=%s_%s,chardev=chr%s%s,vhostforce" % (
+                            nic_vu, i, sock_id, i
+                        ),
+                        "-device",
+                        "virtio-net-pci,netdev=%s_%s,mac=%s" % (
+                            nic_vu, i, virt_mac
+                        )
+                    ])
     else:
         print("Error: Invalid VM type!")
         exit(1)
 
     qemu_opts = [
-            "-cpu", "host",
-            "-enable-kvm",
-            "-numa", "node,memdev=mem",
-            "-mem-prealloc",
-            "-hda", imgfile,
-            "-m", str(args.mem),
-            "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
-            "-nographic"
-            ] + hugepage_opts + nic_opts 
-    
+        "-cpu", "host",
+        "-enable-kvm",
+        "-numa", "node,memdev=mem",
+        "-mem-prealloc",
+        "-hda", imgfile,
+        "-m", str(args.mem),
+        "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
+    ] + hugepage_opts + nic_opts
+    if args.graphic is False:
+        qemu_opts.append("-nographic")
+
     for spp_dev_opt in spp_dev_opts:
         qemu_opts = qemu_opts + spp_dev_opt
 
@@ -247,9 +269,10 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
 
     return ["sudo", args.qemu] + qemu_opts
 
-    
+
 def confirm_ivshmem():
-    """
+    """Check existing prmary and ivshmem file
+
     Check SPP primary is running and ivshmem file is exists.
     If it doesn't exist, ask a user to start primary.
     """
@@ -264,7 +287,8 @@ def confirm_ivshmem():
 
 
 def parse_vids(vids_str):
-    """
+    """Parse a str of vids
+
     Parse a str of vids opt and return as a unique int list of vid
     For example, "1-3,5,7" -> (1, 2, 3, 5, 7)
     """
@@ -286,7 +310,7 @@ def parse_vids(vids_str):
         else:
             if int(ss) >= 0:
                 vids.append(int(ss))
-    
+
     # Remove overlapped elements and return it
     return list(set(vids))
 
@@ -303,11 +327,11 @@ def main():
 
     args = parse_args()
 
-    if args.hda_file == None:
+    if args.hda_file is None:
         print("Error: HDA is required!")
         exit(1)
 
-    if args.type == None:
+    if args.type is None:
         print("Error: VM type is required!")
         exit(1)
 
@@ -317,7 +341,7 @@ def main():
 
     vids = parse_vids(args.vids)
 
-    # Show prompt if spp primary doesn't run 
+    # Show prompt if spp primary doesn't run
     if args.type == "ring":
         confirm_ivshmem()
 
@@ -343,16 +367,16 @@ def main():
     if args.type == "orig":
         print("Booting VM from %s ..." % args.hda_file)
         qemu_cmds.append(
-                gen_qemu_cmd(args, 0, args.hda_file, ifup_sh)
-                )
+            gen_qemu_cmd(args, 0, args.hda_file, ifup_sh)
+        )
     # case of template does not exist
     elif (not os.path.exists(img_tmpl)):
         # Create template
         shutil.copy(args.hda_file, img_tmpl)
         print("Booting VM from %s ..." % img_tmpl)
         qemu_cmds.append(
-                gen_qemu_cmd(args, 0, img_tmpl, ifup_sh)
-                )
+            gen_qemu_cmd(args, 0, img_tmpl, ifup_sh)
+        )
     # Boot VMs of vids option
     else:
         for vid in vids:
@@ -360,8 +384,8 @@ def main():
                 imgfile = img_tmpl
             else:
                 img_inst = "%s/%s%s-%s" % (
-                        img_dir, TYPE_PREFIX[args.type], vid, hda
-                        )
+                    img_dir, TYPE_PREFIX[args.type], vid, hda
+                )
                 if (not os.path.exists(img_inst)):
                     # Create instance
                     shutil.copy(img_tmpl, img_inst)
@@ -369,8 +393,8 @@ def main():
 
             print("Booting VM from %s ..." % imgfile)
             qemu_cmds.append(
-                    gen_qemu_cmd(args, vid, imgfile, ifup_sh)
-                    )
+                gen_qemu_cmd(args, vid, imgfile, ifup_sh)
+            )
 
     # Before running qemu in background, do sudo to input password.
     subprocess.call(["sudo", "pwd"])
