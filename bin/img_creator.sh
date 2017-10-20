@@ -2,7 +2,7 @@
 
 ###
 # Create and setup HDA file
-# 
+#
 
 # Default params
 CORES=4
@@ -14,10 +14,10 @@ FORMAT=qcow2  # HDA format
 ISO_FILE=ubuntu-16.04.3-server-amd64.iso
 URL=http://releases.ubuntu.com/16.04/${ISO_FILE}
 
-SRC_DIR=`dirname ${0}`
+PROJ_DIR=`dirname ${0}`/..
 
 # Parsing args
-# option: 
+# option:
 #   -d : only download iso
 #   -i : path of iso for booting VM
 #   -s : size of HDA file
@@ -28,7 +28,7 @@ SRC_DIR=`dirname ${0}`
 while getopts di:s:f:c:m:h OPT
 do
   case ${OPT} in
-    "d" ) wget -c -P ${SRC_DIR} ${URL}${ISO_FILE}
+    "d" ) wget -c -P ${PROJ_DIR}/iso ${URL}
           exit 0;;
     "i" ) ISO=${OPTARG};;
     "s" ) HDASIZE=${OPTARG};;
@@ -44,18 +44,18 @@ done
 
 # Assign default val if not given
 if [ -e ${ISO} ]; then
-  ISO=${SRC_DIR}/${ISO_FILE}
+  ISO=${PROJ_DIR}/iso/${ISO_FILE}
 fi
 
 # Download iso if not exist
 if [ ! -f ${ISO} ]; then
   echo "Downloading iso file..."
-  wget -c -P ${SRC_DIR} ${URL}
+  wget -c -P ${PROJ_DIR}/iso ${URL}
 fi
 
 
 # Name of HDA is defined as same as ISO
-HDA=${SRC_DIR}/${ISO_FILE%.*}.${FORMAT}
+HDA=${PROJ_DIR}/hda/${ISO_FILE%.*}.${FORMAT}
 
 # Create HDA image
 qemu-img create -f ${FORMAT} ${HDA} ${HDASIZE}
