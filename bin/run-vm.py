@@ -42,8 +42,8 @@ def parse_args():
         help="Interface type ('normal','ring','vhost' or 'orig')")
     parser.add_argument(
         "-c", "--cores",
-        type=int, default=2,
-        help="Number of cores, default is '2'")
+        type=int, default=4,
+        help="Number of cores, default is '4'")
     parser.add_argument(
         "-m", "--mem",
         type=int, default=4096,
@@ -60,6 +60,10 @@ def parse_args():
         "--graphic",
         action='store_true',
         help="Enable graphic mode, default is False")
+    parser.add_argument(
+        "-kvm", "--enable-kvm",
+        action='store_true',
+        help="Enable KVM for acceleration, default is False")
     parser.add_argument(
         "-nn", "--nof-nwif",
         type=int, default=1,
@@ -159,13 +163,14 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
 
         qemu_opts = [
             "-cpu", "host",
-            "-enable-kvm",
             "-numa", "node,memdev=mem",
             "-mem-prealloc",
             "-hda", imgfile,
             "-m", str(args.mem),
             "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
         ] + hugepage_opts + nic_opts + monitor_opts
+        if args.enable_kvm is True:
+            qemu_opts.append("-enable-kvm")
         if args.graphic is False:
             qemu_opts.append("-nographic")
 
@@ -254,13 +259,14 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
 
     qemu_opts = [
         "-cpu", "host",
-        "-enable-kvm",
         "-numa", "node,memdev=mem",
         "-mem-prealloc",
         "-hda", imgfile,
         "-m", str(args.mem),
         "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
     ] + hugepage_opts + nic_opts
+    if args.enable_kvm is True:
+        qemu_opts.append("-enable-kvm")
     if args.graphic is False:
         qemu_opts.append("-nographic")
 
