@@ -11,7 +11,7 @@ HDASIZE=10G
 FORMAT=qcow2  # HDA format
 
 # Default iso file
-ISO_FILE=ubuntu-16.04.3-server-amd64.iso
+ISO_FILE=ubuntu-16.04.4-server-amd64.iso
 URL=http://releases.ubuntu.com/16.04/${ISO_FILE}
 
 PROJ_DIR=`dirname ${0}`/..
