@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""Launch VMs."""
 
 import argparse
 import os
@@ -20,8 +21,7 @@ QEMU_IVSHMEM = "/tmp/ivshmem_qemu_cmdline_pp_ivshmem"
 
 
 def parse_args():
-    """Parse command-line options and return arg obj"""
-
+    """Parse command-line options and return arg obj."""
     parser = argparse.ArgumentParser(description="Run SPP and VMs")
     parser.add_argument(
         "-f", "--hda-file",
@@ -49,9 +49,9 @@ def parse_args():
         type=int, default=4096,
         help="Memory size, default is '4096'")
     parser.add_argument(
-        "-vn", "--vhost-num",
-        type=int, default=1,
-        help="Number of vhost interfaces, default is '1'")
+        "-d", "--dev-ids",
+        type=str,
+        help="List of vhost dev IDs such as '1,3-5'")
     parser.add_argument(
         "-vc", "--vhost-client",
         action='store_true',
@@ -73,8 +73,7 @@ def parse_args():
 
 
 def print_qemu_cmd(args):
-    """Show qemu command options in well formatted style"""
-
+    """Show qemu command options in well formatted style."""
     _args = args[:]
     while len(_args) > 1:
         if _args[1] is not None and (not re.match(r'^-', _args[1])):
@@ -89,14 +88,30 @@ def print_qemu_cmd(args):
             print("  %s" % _args.pop(0))
 
 
+# [TODO] parse_vids() is similar to this method. It should be merged.
+def dev_ids_to_list(dev_ids):
+    """Parse vhost device IDs and return as a list.
+
+    Example:
+    '1,3-5' #=> [1,3,4,5]
+    """
+    res = []
+    for dev_id_part in dev_ids.split(','):
+        if '-' in dev_id_part:
+            cl = dev_id_part.split('-')
+            res = res + range(int(cl[0]), int(cl[1])+1)
+        else:
+            res.append(int(dev_id_part))
+    return res
+
+
 def qemu_version(qemu):
-    """Return version of qemu
+    """Return version of qemu.
 
     Params for qemu is different between its versions.
     This function is intented to use switch generating params
     for each of versions.
     """
-
     cmd = "%s -version" % qemu
     res = subprocess.check_output(cmd.split())
 
@@ -107,8 +122,7 @@ def qemu_version(qemu):
 
 
 def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
-    """Generate qemu options and return as a list for subprocess"""
-
+    """Generate qemu options and return as a list for subprocess."""
     macaddr = {
         "orig":   "00:AD:BE:B0:FF:%02d",
         "normal": "00:AD:BE:B1:%02d:%02d",
@@ -217,40 +231,42 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             spp_dev_opts.append(tmp.split(" "))  # if ring, only one option.
             f.close()
         elif args.type == "vhost":
+            if args.dev_ids is None:
+                print("Error: dev_ids is required!")
+                exit(1)
+
             if vid != 0:
                 # Attach several vhost interfaces
-                sock_id = vid
                 nic_vu = "net_vu%s" % vid  # NIC for vhost-user
 
-                # TODO(yasufum) Consider assignment of sock id
-                # Additional socket id is defined by adding from 0 to sock id.
-                # For example, sock110, sock111, ... for sock11
-                for i in range(0, args.vhost_num):
-                    virt_mac = macaddr["virtio"] % (vid, i)
+                print(dev_ids_to_list(args.dev_ids))
+
+                for dev_id in dev_ids_to_list(args.dev_ids):
+                    virt_mac = macaddr["virtio"] % (vid, dev_id)
 
                     if args.vhost_client is True:
                         spp_dev_opts.append([
                             "-chardev",
-                            "socket,id=chr%s%s,path=/tmp/sock%s%s,server" % (
-                                sock_id, i, sock_id, i
+                            "socket,id=chr%s,path=/tmp/sock%s,server" % (
+                                dev_id, dev_id
                             )
                         ])
                     else:
                         spp_dev_opts.append([
                             "-chardev",
-                            "socket,id=chr%s%s,path=/tmp/sock%s%s" % (
-                                sock_id, i, sock_id, i
+                            "socket,id=chr%s,path=/tmp/sock%s" % (
+                                dev_id, dev_id
                             )
                         ])
 
                     spp_dev_opts.append([
                         "-netdev",
-                        "vhost-user,id=%s_%s,chardev=chr%s%s,vhostforce" % (
-                            nic_vu, i, sock_id, i
+                        "vhost-user,id=%s_%s,chardev=chr%s,vhostforce" % (
+                            nic_vu, dev_id, dev_id
                         ),
                         "-device",
                         "virtio-net-pci,netdev=%s_%s,mac=%s" % (
-                            nic_vu, i, virt_mac
+                            nic_vu, dev_id, virt_mac
                         )
                     ])
     else:
@@ -279,12 +295,11 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
 
 
 def confirm_ivshmem():
-    """Check existing prmary and ivshmem file
+    """Check existing prmary and ivshmem file.
 
     Check SPP primary is running and ivshmem file is exists.
     If it doesn't exist, ask a user to start primary.
     """
-
     while not os.path.exists(QEMU_IVSHMEM):
         if not os.path.exists(QEMU_IVSHMEM):
             print("SPP primary process isn't ready for ivshmem.")
@@ -295,12 +310,11 @@ def confirm_ivshmem():
 
 
 def parse_vids(vids_str):
-    """Parse a str of vids
+    """Parse a str of vids.
 
     Parse a str of vids opt and return as a unique int list of vid
     For example, "1-3,5,7" -> (1, 2, 3, 5, 7)
     """
-
     # Check if invalid char is included
     if re.match(r'.*[a-zA-Z\+\*]', vids_str):
         print("Invalid argment: %s" % vids_str)
@@ -324,7 +338,7 @@ def parse_vids(vids_str):
 
 
 def main():
-
+    """Run main method of vm-launcher."""
     proj_dir = os.path.dirname(__file__) + "/.."  # Project root dir.
     tmpl_dir = "%s/hda/templates" % proj_dir
     inst_dir = "%s/hda/instances" % proj_dir
@@ -379,6 +393,8 @@ def main():
     # If type is "orig" or template does not exist, vids option is
     # igrenored to launch original or template VM.
     if args.type == "orig":
+        if vids != [0]:
+            print("vid '0' is used and not required for 'orig' type.")
         print("Booting VM from %s ..." % args.hda_file)
         qemu_cmds.append(
             gen_qemu_cmd(args, 0, args.hda_file, ifup_sh)
