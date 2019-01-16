@@ -38,7 +38,7 @@ It starts downloading Ubuntu ISO image, creating hda file with
 `qemu-img` and launching a VM with QEMU in graphical mode.
 
 ```sh
-$ bash iso/img_creator.sh
+$ bash bin/img_creator.sh
 ```
 
 You might be failed to download the ISO sometimes because it is a large
@@ -49,7 +49,7 @@ ISO file.
 
 ```sh
 # Just downloading. Enable to resume.
-$ bash iso/img_creator.sh -d
+$ bash bin/img_creator.sh -d
 ```
 
 You will find the hda file as `ubuntu-16.04.x-server-amd64.iso`
@@ -65,7 +65,7 @@ First of all, download ISO file of Ubuntu16.04 from Ubuntu's site
 to create HDA file and install.
 Ubuntu 14.04 might work, but not be recommended.
 
-To download the ISO, just run `iso/img_creator.sh -d` or get it
+To download the ISO, just run `bin/img_creator.sh -d` or get it
 from [Ubuntu site](http://releases.ubuntu.com/) directly.
 List of download links is described in [iso/README.md](iso/README.md).
 
@@ -83,17 +83,17 @@ if the downloading is terminated for some reasons.
 
 ### Setup HDA File
 
-Create and setup a hda file using `iso/img_creator.sh` and retrieved ISO
+Create and setup a hda file using `bin/img_creator.sh` and retrieved ISO
 file.
 ISO is expected to be `iso/ubuntu-16.04.x-server-amd64.iso` by default,
 or you can specify any of images with `-i` option.
 
 ```sh
 # Using default ISO file
-$ bash iso/img_creator.sh
+$ bash bin/img_creator.sh
 
 # or without default
-$ bash iso/img_creator.sh -i /path/to/your/iso
+$ bash bin/img_creator.sh -i /path/to/your/iso
 ```
 
 This script runs qemu in graphical mode for installation.
