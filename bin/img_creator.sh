@@ -4,39 +4,48 @@
 # Create and setup HDA file
 #
 
-#set -x
+CMD_NAME="img_creator.sh"
 
 # Default params
 CORES=4
 MEMSIZE=4096
-HDASIZE=10G
+HDASIZE=10
 FORMAT=qcow2  # HDA format
-
-U_VER="18.04.1.0-live"
-U_TARGET="server"
+DIST_VER="16.04.5"
+DIST_TARGET="server"
 
 DL_ONLY=0
+USE_VIRSH=1
+ENABLE_KVM="-enable-kvm"
 
-# Parsing args
-# option:
-#   -v : version of Ubuntu
-#   -d : only download iso
-#   -i : path of iso for booting VM
-#   -s : size of HDA file
-#   -f : format of HDA (default is qcow2)
-#   -c : number of cores of VM
-#   -m : mem size of VM
-#   -h : show help message
-#   --help : show help message
-#   --kvm : enable kvm
-#   --nographic : install via CUI
+function make_help() {
+    CMD_OPTS="NAME\n"
+    CMD_OPTS=${CMD_OPTS}"\t"${CMD_NAME}" - setup vm image\n"
+    CMD_OPTS=${CMD_OPTS}"\n"
 
-CMD_OPTS="[-d] [-i ISO] [-v DIST_VER] [-t TARGET] [-s HDASIZE]"
-CMD_OPTS=${CMD_OPTS}" [-f FORMAT] [-c CORES] [-m MEMSIZE] [-h]"
-CMD_OPTS=${CMD_OPTS}" [--help] [--kvm] [--nographic]"
+    CMD_OPTS=${CMD_OPTS}"SYNOPSIS\n"
+    CMD_OPTS=${CMD_OPTS}"\t${CMD_NAME} [-d] [-i ISO] [-v DIST_VER] [-t TARGET] [-s HDASIZE]\n"
+    CMD_OPTS=${CMD_OPTS}"\t[-f FORMAT] [-c CORES] [-m MEMSIZE] [-h]\n"
+    CMD_OPTS=${CMD_OPTS}"\t[--hda FORMAT] [--no-kvm] [--graphic] [--help]\n\n"
+
+    CMD_OPTS=${CMD_OPTS}"DESCRIPTION\n"
+    CMD_OPTS=${CMD_OPTS}"\t-d : only download ISO\n"
+    CMD_OPTS=${CMD_OPTS}"\t-i : path of ISO for booting VM\n"
+    CMD_OPTS=${CMD_OPTS}"\t-v : version of Ubuntu\n"
+    CMD_OPTS=${CMD_OPTS}"\t-t : target (ubuntu)\n"
+    CMD_OPTS=${CMD_OPTS}"\t-s : size of HDA file\n"
+    CMD_OPTS=${CMD_OPTS}"\t-f or --hda: format of HDA (default is qcow2)\n"
+    CMD_OPTS=${CMD_OPTS}"\t-c : number of cores of VM\n"
+    CMD_OPTS=${CMD_OPTS}"\t-m : mem size of VM\n"
+    CMD_OPTS=${CMD_OPTS}"\t-h : show help message\n"
+    CMD_OPTS=${CMD_OPTS}"\t--no-kvm : disable kvm\n"
+    CMD_OPTS=${CMD_OPTS}"\t--graphic : install via GUI\n"
+    CMD_OPTS=${CMD_OPTS}"\t--help : show help message"
+}
 
 function show_help() {
-    echo "Usage: ${CMDNAME} ${CMD_OPTS}"
+    make_help
+    echo -e "${CMD_OPTS}"
     exit 0
 }
 
@@ -52,15 +61,19 @@ do
         case ${OPTARG} in
             help)
                 show_help;;
-            kvm)
-                KVM="-enable-kvm";;
-            nographic)
-                NO_GRAPHIC="-nographic -device sga";;
+            hda)
+                FORMAT=${OPTARG};;
+            no-kvm)
+                ENABLE_KVM=;;
+            graphic)
+                USE_VIRSH=;;
+            debug)
+                ENABLE_DEBUG=1;;
         esac;;
     "d" ) DL_ONLY=1;;
     "i" ) ISO=${OPTARG};;
-    "v" ) U_VER=${OPTARG};;
-    "t" ) U_TARGET=${OPTARG};;
+    "v" ) DIST_VER=${OPTARG};;
+    "t" ) DIST_TARGET=${OPTARG};;
     "s" ) HDASIZE=${OPTARG};;
     "f" ) FORMAT=${OPTARG};;
     "c" ) CORES=${OPTARG};;
@@ -70,25 +83,30 @@ do
   esac
 done
 
+if [ ${ENABLE_DEBUG} -eq 1 ]; then
+    set -x
+fi
+
 # Parse major and minor versions, e.g. "18.04.01" => "18 04"
-vers=($(echo "${U_VER}" | tr '-' ' '))
+vers=($(echo "${DIST_VER}" | tr '-' ' '))
 vers=${vers[0]}
 vers=($(echo "${vers}" | tr '.' ' '))
 
-# Default iso file
-ISO_FILE=ubuntu-${U_VER}-${U_TARGET}-amd64.iso
+VMNAME=spp-ubuntu-${DIST_VER}-${DIST_TARGET}
+
+# Default ISO file
+ISO_FILE=ubuntu-${DIST_VER}-${DIST_TARGET}-amd64.iso
 URL=http://releases.ubuntu.com/${vers[0]}.${vers[1]}/${ISO_FILE}
 
 PROJ_DIR=`dirname ${0}`/..
 
-echo $URL
 # Assign default val if not given
 if [ -e ${ISO} ]; then
   ISO=${PROJ_DIR}/iso/${ISO_FILE}
 fi
 
-# Download iso if not exist
-echo "Downloading iso file..."
+# Download ISO if not exist
+echo "Downloading ISO file..."
 wget -c -P ${PROJ_DIR}/iso ${URL}
 
 if [ ${DL_ONLY} -eq 1 ]; then
@@ -100,14 +118,29 @@ fi
 HDA=${PROJ_DIR}/hda/${ISO_FILE%.*}.${FORMAT}
 
 # Create HDA image
-qemu-img create -f ${FORMAT} ${HDA} ${HDASIZE}
+qemu-img create -f ${FORMAT} ${HDA} ${HDASIZE}G
 
-echo ${NO_GRAPHIC}
-
-# Install OS in graphical mode
-qemu-system-x86_64 ${KVM} ${NO_GRAPHIC} \
-  -cdrom ${ISO} \
-  -hda ${HDA} \
-  -m ${MEMSIZE} \
-  -smp cores=${CORES},threads=1,sockets=1 \
-  -boot d
+if [ ${USE_VIRSH} -eq 1 ]; then
+    #sudo virsh undefine ${VMNAME}
+    sudo virt-install \
+        --connect=qemu:///system \
+        --name ${VMNAME} \
+        --ram ${MEMSIZE} \
+        --disk path=${HDA},size=${HDASIZE},format=${FORMAT} \
+        --vcpus=${CORES} \
+        --os-type linux \
+        --os-variant=ubuntu${vers[0]}.${vers[1]} \
+        --network network=default \
+        --nographics \
+        --extra-args='console=tty0 console=ttyS0,115200n8' \
+        --location ${ISO}
+    sudo chown ${USER} ${HDA}
+else
+     # Install OS in graphical mode
+     qemu-system-x86_64 ${ENABLE_KVM} \
+         -cdrom ${ISO} \
+         -hda ${HDA} \
+         -m ${MEMSIZE} \
+         -smp cores=${CORES},threads=1,sockets=1 \
+         -boot d
+fi
