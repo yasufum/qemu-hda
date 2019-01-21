@@ -61,9 +61,9 @@ def parse_args():
         action='store_true',
         help="Enable graphic mode, default is False")
     parser.add_argument(
-        "-kvm", "--enable-kvm",
+        "--disable-kvm",
         action='store_true',
-        help="Enable KVM for acceleration, default is False")
+        help="Disable KVM for acceleration, default is False")
     parser.add_argument(
         "-nn", "--nof-nwif",
         type=int, default=1,
@@ -183,7 +183,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             "-m", str(args.mem),
             "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
         ] + hugepage_opts + nic_opts + monitor_opts
-        if args.enable_kvm is True:
+        if args.disable_kvm is not True:
             qemu_opts.append("-enable-kvm")
         if args.graphic is False:
             qemu_opts.append("-nographic")
@@ -281,7 +281,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
         "-m", str(args.mem),
         "-smp", "cores=%s,threads=1,sockets=1" % args.cores,
     ] + hugepage_opts + nic_opts
-    if args.enable_kvm is True:
+    if args.disable_kvm is not True:
         qemu_opts.append("-enable-kvm")
     if args.graphic is False:
         qemu_opts.append("-nographic")
