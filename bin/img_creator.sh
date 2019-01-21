@@ -17,6 +17,7 @@ DIST_TARGET="server"
 DL_ONLY=0
 USE_VIRSH=1
 ENABLE_KVM="-enable-kvm"
+ENABLE_DEBUG=0
 
 function make_help() {
     CMD_OPTS="NAME\n"
@@ -66,7 +67,7 @@ do
             no-kvm)
                 ENABLE_KVM=;;
             graphic)
-                USE_VIRSH=;;
+                USE_VIRSH=0;;
             debug)
                 ENABLE_DEBUG=1;;
         esac;;
@@ -96,7 +97,16 @@ VMNAME=spp-ubuntu-${DIST_VER}-${DIST_TARGET}
 
 # Default ISO file
 ISO_FILE=ubuntu-${DIST_VER}-${DIST_TARGET}-amd64.iso
-URL=http://releases.ubuntu.com/${vers[0]}.${vers[1]}/${ISO_FILE}
+
+# TODO(yasufum) Revise checking for versions.
+if [ ${vers[0]} = 18 ]; then
+    URL=http://cdimage.ubuntu.com/releases/${DIST_VER}/release/${ISO_FILE}
+elif [ ${vers[0]} = 16 ]; then
+    URL=http://releases.ubuntu.com/${vers[0]}.${vers[1]}/${ISO_FILE}
+else
+    echo "This tool supports only Ubuntu 16.04 or 18.04 LTS."
+    exit 0
+fi
 
 PROJ_DIR=`dirname ${0}`/..
 
