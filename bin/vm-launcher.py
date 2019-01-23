@@ -230,7 +230,7 @@ def gen_qemu_cmd(args, vid, imgfile, ifup_sh):
             tmp = tmp.strip()
             spp_dev_opts.append(tmp.split(" "))  # if ring, only one option.
             f.close()
-        elif args.type == "vhost":
+        elif args.type == "vhost" and vid != 0:
             if args.dev_ids is None:
                 print("Error: dev_ids is required!")
                 exit(1)
