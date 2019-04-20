@@ -9,9 +9,9 @@ CMD_NAME="img_creator.sh"
 # Default params
 CORES=4
 MEMSIZE=4096
-HDASIZE=10
+HDASIZE=12
 FORMAT=qcow2  # HDA format
-DIST_VER="16.04.5"
+DIST_VER="18.04.2"
 DIST_TARGET="server"
 
 DL_ONLY=0
@@ -147,7 +147,7 @@ if [ ${USE_VIRSH} -eq 1 ]; then
     sudo chown ${USER} ${HDA}
 else
      # Install OS in graphical mode
-     qemu-system-x86_64 ${ENABLE_KVM} \
+     sudo qemu-system-x86_64 ${ENABLE_KVM} \
          -cdrom ${ISO} \
          -hda ${HDA} \
          -m ${MEMSIZE} \
