@@ -80,7 +80,7 @@ def get_ipaddr(target, addr_table):
 
 def main():
     f = open(dns_file, "r")
-    dns_entries = yaml.load(f)
+    dns_entries = yaml.load(f, Loader=yaml.FullLoader)
     f.close()
 
     args = parse_args()
