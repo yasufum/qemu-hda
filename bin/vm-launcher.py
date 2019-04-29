@@ -68,24 +68,39 @@ def parse_args():
         "-nn", "--nof-nwif",
         type=int, default=1,
         help="Number of network interfaces, default is '1'")
+    parser.add_argument(
+        "--dry-run",
+        action='store_true',
+        help="Show command line but do not run")
     args = parser.parse_args()
     return args
 
 
-def print_qemu_cmd(args):
-    """Show qemu command options in well formatted style."""
+def print_qemu_cmd(args, backslash=True):
+    """Show qemu command options in pretty format."""
+
+    if backslash is True:
+        bs = ' \\'
+    else:
+        bs = ''
+
     _args = args[:]
     while len(_args) > 1:
         if _args[1] is not None and (not re.match(r'^-', _args[1])):
             ary = []
             for i in range(0, 2):
                 ary.append(_args.pop(0))
+                if len(_args) == 1:
+                    bs = ''
             if re.match(r'^-', ary[0]):
-                print("  %s %s" % (ary[0], ary[1]))
+                print("  {} {}{}".format(ary[0], ary[1], bs))
             else:
-                print("%s %s" % (ary[0], ary[1]))
+                print("{} {}{}".format(ary[0], ary[1], bs))
         else:
-            print("  %s" % _args.pop(0))
+            opt = _args.pop(0)
+            if len(_args) == 1:
+                bs = ''
+            print("  {}{}".format(opt, bs))
 
 
 # [TODO] parse_vids() is similar to this method. It should be merged.
@@ -395,7 +410,8 @@ def main():
     if args.type == "orig":
         if vids != [0]:
             print("vid '0' is used and not required for 'orig' type.")
-        print("Booting VM from %s ..." % args.hda_file)
+        if args.dry_run is not True:
+            print("Booting VM from %s ..." % args.hda_file)
         qemu_cmds.append(
             gen_qemu_cmd(args, 0, args.hda_file, ifup_sh)
         )
@@ -403,7 +419,8 @@ def main():
     elif (not os.path.exists(img_tmpl)):
         # Create template
         shutil.copy(args.hda_file, img_tmpl)
-        print("Booting VM from %s ..." % img_tmpl)
+        if args.dry_run is not True:
+            print("Booting VM from %s ..." % img_tmpl)
         qemu_cmds.append(
             gen_qemu_cmd(args, 0, img_tmpl, ifup_sh)
         )
@@ -421,7 +438,8 @@ def main():
                     shutil.copy(img_tmpl, img_inst)
                 imgfile = img_inst
 
-            print("Booting VM from %s ..." % imgfile)
+            if args.dry_run is not True:
+                print("Booting VM from %s ..." % imgfile)
             qemu_cmds.append(
                 gen_qemu_cmd(args, vid, imgfile, ifup_sh)
             )
@@ -432,7 +450,8 @@ def main():
     for qc in qemu_cmds:
         qc.append("&")
         print_qemu_cmd(qc)
-        subprocess.call(" ".join(qc), shell=True)
+        if args.dry_run is not True:
+            subprocess.call(" ".join(qc), shell=True)
 
 
 if __name__ == '__main__':
